@@ -1,35 +1,28 @@
 ---
+import { t, type Lang } from "../i18n";
+
 interface Props {
-    lang?: "es" | "en";
+    lang?: Lang;
 }
 
 const { lang = "es" } = Astro.props;
-
-const t = {
-    legal:
-        lang === "es"
-            ? `© ${new Date().getFullYear()} Genshin Fan Page. No afiliado con HoYoverse.`
-            : `© ${new Date().getFullYear()} Genshin Fan Page. Not affiliated with HoYoverse.`,
-    privacy: lang === "es" ? "Privacidad" : "Privacy Policy",
-    terms: lang === "es" ? "Términos" : "Terms of Service",
-    contact: lang === "es" ? "Contacto" : "Contact"
-};
+const year = new Date().getFullYear();
 
 ---
 
 <footer class="bg-slate-950 text-slate-400 py-8 mt-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <p class="mb-4">
-            {t.legal}
+            {t(lang, "footer.legal", { year })}
         </p>
         <div class="flex justify-center space-x-6">
             <a href="#" class="hover:text-white transition-colors"
-                >{t.privacy}</a
+                >{t(lang, "footer.privacy")}</a
             >
             <a href="#" class="hover:text-white transition-colors"
-                >{t.terms}</a
+                >{t(lang, "footer.terms")}</a
             >
-            <a href="#" class="hover:text-white transition-colors">{t.contact}</a>
+            <a href="#" class="hover:text-white transition-colors">{t(lang, "footer.contact")}</a>
         </div>
     </div>
 </footer>

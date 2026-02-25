@@ -1,19 +1,21 @@
 ---
+import { getLangPath, supportedLangs, t, type Lang } from "../i18n";
+
 interface Props {
-    lang?: "es" | "en";
+    lang?: Lang;
 }
 
 const { lang = "es" } = Astro.props;
 
-const t = {
-    home: lang === "es" ? "Inicio" : "Home",
-    characters: lang === "es" ? "Personajes" : "Characters",
-    tierList: "Tier List",
-    teams: lang === "es" ? "Equipos" : "Teams",
-    openMenu: lang === "es" ? "Abrir menú principal" : "Open main menu"
-};
+const siteBase = import.meta.env.BASE_URL;
+const basePath = getLangPath(lang, siteBase);
 
-const basePath = lang === "en" ? "/en/" : "/";
+const languageLinks = supportedLangs.map((locale) => ({
+    locale,
+    label: locale.toUpperCase(),
+    path: getLangPath(locale, siteBase),
+    active: locale === lang
+}));
 ---
 
 <nav
@@ -26,47 +28,43 @@ const basePath = lang === "en" ? "/en/" : "/";
                     href={basePath}
                     class="flex-shrink-0 font-bold text-2xl text-yellow-400 tracking-wider"
                 >
-                    GENSHIN.DB
+                    GENSHIN HUB
                 </a>
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
                         <a
                             href={basePath}
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                            >{t.home}</a
+                            >{t(lang, "navbar.home")}</a
                         >
                         <a
                             href={`${basePath}#characters`}
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                            >{t.characters}</a
+                            >{t(lang, "navbar.characters")}</a
                         >
                         <a
                             href="#"
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                            >{t.tierList}</a
+                            >{t(lang, "navbar.tierList")}</a
                         >
                         <a
                             href="#"
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                            >{t.teams}</a
+                            >{t(lang, "navbar.teams")}</a
                         >
                     </div>
                 </div>
             </div>
 
             <div class="hidden md:flex items-center gap-2 text-xs">
-                <a
-                    href="/"
-                    class={`px-2 py-1 rounded border transition-colors ${lang === "es" ? "bg-yellow-500 text-slate-900 border-yellow-400" : "bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700"}`}
-                >
-                    ES
-                </a>
-                <a
-                    href="/en/"
-                    class={`px-2 py-1 rounded border transition-colors ${lang === "en" ? "bg-yellow-500 text-slate-900 border-yellow-400" : "bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700"}`}
-                >
-                    EN
-                </a>
+                {languageLinks.map((languageLink) => (
+                    <a
+                        href={languageLink.path}
+                        class={`px-2 py-1 rounded border transition-colors ${languageLink.active ? "bg-yellow-500 text-slate-900 border-yellow-400" : "bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700"}`}
+                    >
+                        {languageLink.label}
+                    </a>
+                ))}
             </div>
 
             <div class="-mr-2 flex md:hidden">
@@ -74,7 +72,7 @@ const basePath = lang === "en" ? "/en/" : "/";
                     type="button"
                     class="bg-slate-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-white"
                 >
-                    <span class="sr-only">{t.openMenu}</span>
+                    <span class="sr-only">{t(lang, "navbar.openMenu")}</span>
                     <svg
                         class="block h-6 w-6"
                         xmlns="http://www.w3.org/2000/svg"

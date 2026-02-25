@@ -1,5 +1,12 @@
 ---
 import type { Character } from "../data/characters";
+import anemoIcon from "../assets/elements/anemo.png";
+import cryoIcon from "../assets/elements/cryo.png";
+import electroIcon from "../assets/elements/electro.png";
+import dendroIcon from "../assets/elements/dendro.png";
+import geoIcon from "../assets/elements/geo.png";
+import hydroIcon from "../assets/elements/hydro.png";
+import pyroIcon from "../assets/elements/pyro.png";
 
 interface Props {
     character: Character;
@@ -18,7 +25,18 @@ const elementColors: Record<string, string> = {
     Geo: "text-yellow-500 bg-yellow-100/10 border-yellow-500/20",
 };
 
+const elementIcons: Record<string, string> = {
+    Anemo: anemoIcon.src,
+    Cryo: cryoIcon.src,
+    Electro: electroIcon.src,
+    Dendro: dendroIcon.src,
+    Geo: geoIcon.src,
+    Hydro: hydroIcon.src,
+    Pyro: pyroIcon.src
+};
+
 const elementClass = elementColors[character.element] || "text-gray-400";
+const elementIconSrc = elementIcons[character.element];
 ---
 
 <div
@@ -53,6 +71,12 @@ const elementClass = elementColors[character.element] || "text-gray-400";
                 </svg>
             </span>
         </div>
+
+        {elementIconSrc && (
+            <div class="absolute top-2 left-2 p-1.5 rounded-md bg-slate-900/65 border border-slate-600/70 backdrop-blur-sm">
+                <img src={elementIconSrc} alt={character.element} class="h-4 w-4" loading="lazy" />
+            </div>
+        )}
     </div>
 
     <div class="p-4">
@@ -65,10 +89,10 @@ const elementClass = elementColors[character.element] || "text-gray-400";
             <span
                 class={`text-sm font-medium px-2 py-0.5 rounded border ${elementClass}`}
             >
-                {character.element}
+                {character.elementLabel ?? character.element}
             </span>
             <span class="text-xs text-slate-400 uppercase tracking-wide"
-                >{character.weapon}</span
+                >{character.weaponLabel ?? character.weapon}</span
             >
         </div>
     </div>

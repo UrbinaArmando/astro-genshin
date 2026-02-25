@@ -1,9 +1,15 @@
+import { type Lang } from '../i18n';
+
 export interface Character {
     id: string;
     name: string;
     rarity: 4 | 5;
     element: 'Pyro' | 'Hydro' | 'Anemo' | 'Electro' | 'Dendro' | 'Cryo' | 'Geo';
     weapon: 'Sword' | 'Claymore' | 'Polearm' | 'Bow' | 'Catalyst';
+    title?: string;
+    description?: string;
+    elementLabel?: string;
+    weaponLabel?: string;
     imageUrl: string;
     fallbackImageUrl?: string;
 }
@@ -66,7 +72,16 @@ interface GsiCharacterListResponse {
     total_pages: number;
 }
 
+interface GenshinDbCharacterResponse {
+    name?: string;
+    title?: string;
+    description?: string;
+    weaponText?: string;
+    elementText?: string;
+}
+
 const GSI_API_BASE_URL = 'https://gsi.fly.dev';
+const GENSHIN_DB_API_BASE_URL = 'https://genshin-db-api.vercel.app/api/v5';
 
 const toSlug = (value: string) =>
     value
@@ -85,6 +100,61 @@ const imageNameAliases: Record<string, string> = {
 };
 
 const getImageName = (name: string): string => imageNameAliases[name] ?? name;
+
+const characterQueryAliases: Record<string, string> = {
+    'Traveller (male)': 'Aether',
+    'Traveller (female)': 'Lumine',
+    Tartaglia: 'Tartaglia',
+    Yae: 'Yae Miko',
+    Kuki: 'Kuki Shinobu',
+    Sara: 'Kujou Sara',
+    Ayaka: 'Kamisato Ayaka',
+    Ayato: 'Kamisato Ayato',
+    Kazuha: 'Kaedehara Kazuha',
+    Itto: 'Arataki Itto',
+    Kokomi: 'Sangonomiya Kokomi'
+};
+
+const getCharacterQueryName = (name: string): string => characterQueryAliases[name] ?? name;
+
+const getResultLanguage = (lang: Lang): 'Spanish' | 'English' =>
+    lang === 'es' ? 'Spanish' : 'English';
+
+const localizedDetailsCache = new Map<string, Promise<GenshinDbCharacterResponse | undefined>>();
+
+const getLocalizedCharacterDetails = async (
+    name: string,
+    lang: Lang
+): Promise<GenshinDbCharacterResponse | undefined> => {
+    const queryName = getCharacterQueryName(name);
+    const cacheKey = `${lang}:${queryName.toLowerCase()}`;
+
+    if (localizedDetailsCache.has(cacheKey)) {
+        return localizedDetailsCache.get(cacheKey);
+    }
+
+    const fetchPromise = (async () => {
+        try {
+            const params = new URLSearchParams({
+                query: queryName,
+                resultLanguage: getResultLanguage(lang)
+            });
+
+            const response = await fetch(`${GENSHIN_DB_API_BASE_URL}/characters?${params.toString()}`);
+
+            if (!response.ok) {
+                return undefined;
+            }
+
+            return (await response.json()) as GenshinDbCharacterResponse;
+        } catch {
+            return undefined;
+        }
+    })();
+
+    localizedDetailsCache.set(cacheKey, fetchPromise);
+    return fetchPromise;
+};
 
 const getFallbackImageUrl = (name: string): string =>
     `https://sunderarmor.com/GENSHIN/Characters/1/${encodeURIComponent(getImageName(name))}.png`;
@@ -159,17 +229,45 @@ const mapToCharacter = (
     const thumbnailUrl = wikiTitle ? thumbnailMap[wikiTitle] : undefined;
 
     return {
-    id: toSlug(character.name),
-    name: character.name,
-    rarity: mapRarity(character.rarity),
-    element: character.vision,
-    weapon: character.weapon,
-    imageUrl: thumbnailUrl ?? getFallbackImageUrl(character.name),
-    fallbackImageUrl: getFallbackImageUrl(character.name)
+        id: toSlug(character.name),
+        name: character.name,
+        rarity: mapRarity(character.rarity),
+        element: character.vision,
+        weapon: character.weapon,
+        elementLabel: character.vision,
+        weaponLabel: character.weapon,
+        imageUrl: thumbnailUrl ?? getFallbackImageUrl(character.name),
+        fallbackImageUrl: getFallbackImageUrl(character.name)
     };
 };
 
-export const getCharacters = async (): Promise<Character[]> => {
+const enrichCharactersWithLocalization = async (
+    characters: Character[],
+    lang: Lang
+): Promise<Character[]> => {
+    const localizedDetails = await Promise.all(
+        characters.map((character) => getLocalizedCharacterDetails(character.name, lang))
+    );
+
+    return characters.map((character, index) => {
+        const details = localizedDetails[index];
+
+        if (!details) {
+            return character;
+        }
+
+        return {
+            ...character,
+            name: details.name ?? character.name,
+            title: details.title,
+            description: details.description,
+            elementLabel: details.elementText ?? character.elementLabel ?? character.element,
+            weaponLabel: details.weaponText ?? character.weaponLabel ?? character.weapon
+        };
+    });
+};
+
+export const getCharacters = async (lang: Lang = 'es'): Promise<Character[]> => {
     try {
         const limitPerPage = 100;
         const firstResponse = await fetch(`${GSI_API_BASE_URL}/characters?limit=${limitPerPage}&page=1`);
@@ -198,8 +296,9 @@ export const getCharacters = async (): Promise<Character[]> => {
         }
 
         const thumbnailMap = await getFandomThumbnailMap(allResults);
+        const baseCharacters = allResults.map((character) => mapToCharacter(character, thumbnailMap));
 
-        return allResults.map((character) => mapToCharacter(character, thumbnailMap));
+        return enrichCharactersWithLocalization(baseCharacters, lang);
     } catch {
         return fallbackCharacters;
     }
