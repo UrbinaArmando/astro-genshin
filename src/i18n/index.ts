@@ -13,7 +13,8 @@ const messages = {
             characters: 'Personajes',
             tierList: 'Tier List',
             teams: 'Equipos',
-            openMenu: 'Abrir menú principal'
+            openMenu: 'Abrir menú principal',
+            closeMenu: 'Cerrar menú principal'
         },
         footer: {
             legal: '© {year} Genshin Hub. No afiliado con HoYoverse.',
@@ -52,7 +53,8 @@ const messages = {
             characters: 'Characters',
             tierList: 'Tier List',
             teams: 'Teams',
-            openMenu: 'Open main menu'
+            openMenu: 'Open main menu',
+            closeMenu: 'Close main menu'
         },
         footer: {
             legal: '© {year} Genshin Hub. Not affiliated with HoYoverse.',

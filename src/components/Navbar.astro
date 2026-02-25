@@ -9,6 +9,7 @@ const { lang = "es" } = Astro.props;
 
 const siteBase = import.meta.env.BASE_URL;
 const basePath = getLangPath(lang, siteBase);
+const mobileMenuId = `mobile-menu-${lang}`;
 
 const languageLinks = supportedLangs.map((locale) => ({
     locale,
@@ -70,11 +71,16 @@ const languageLinks = supportedLangs.map((locale) => ({
             <div class="-mr-2 flex md:hidden">
                 <button
                     type="button"
+                    id="mobile-menu-button"
+                    aria-expanded="false"
+                    aria-controls={mobileMenuId}
                     class="bg-slate-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-white"
                 >
-                    <span class="sr-only">{t(lang, "navbar.openMenu")}</span>
+                    <span class="sr-only" data-menu-label-open>{t(lang, "navbar.openMenu")}</span>
+                    <span class="sr-only hidden" data-menu-label-close>{t(lang, "navbar.closeMenu")}</span>
                     <svg
                         class="block h-6 w-6"
+                        data-menu-icon-open
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -87,8 +93,91 @@ const languageLinks = supportedLangs.map((locale) => ({
                             stroke-width="2"
                             d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
+                    <svg
+                        class="hidden h-6 w-6"
+                        data-menu-icon-close
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
             </div>
         </div>
     </div>
+
+    <div id={mobileMenuId} class="md:hidden hidden border-t border-slate-800 bg-slate-900/95">
+        <div class="px-3 py-3 space-y-1">
+            <a
+                href={basePath}
+                class="block hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+                {t(lang, "navbar.home")}
+            </a>
+            <a
+                href={`${basePath}#characters`}
+                class="block hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+                {t(lang, "navbar.characters")}
+            </a>
+            <a
+                href="#"
+                class="block hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+                {t(lang, "navbar.tierList")}
+            </a>
+            <a
+                href="#"
+                class="block hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+                {t(lang, "navbar.teams")}
+            </a>
+
+            <div class="flex items-center gap-2 pt-2 px-3">
+                {languageLinks.map((languageLink) => (
+                    <a
+                        href={languageLink.path}
+                        class={`px-2 py-1 rounded border text-xs transition-colors ${languageLink.active ? "bg-yellow-500 text-slate-900 border-yellow-400" : "bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700"}`}
+                    >
+                        {languageLink.label}
+                    </a>
+                ))}
+            </div>
+        </div>
+    </div>
 </nav>
+
+<script>
+    const menuButton = document.getElementById("mobile-menu-button");
+    const menuId = menuButton?.getAttribute("aria-controls") ?? "";
+    const mobileMenu = menuId ? document.getElementById(menuId) : null;
+    const openIcon = menuButton?.querySelector<SVGElement>("[data-menu-icon-open]");
+    const closeIcon = menuButton?.querySelector<SVGElement>("[data-menu-icon-close]");
+    const openLabel = menuButton?.querySelector<HTMLElement>("[data-menu-label-open]");
+    const closeLabel = menuButton?.querySelector<HTMLElement>("[data-menu-label-close]");
+
+    const setMenuState = (isOpen: boolean) => {
+        if (!menuButton || !mobileMenu) {
+            return;
+        }
+
+        menuButton.setAttribute("aria-expanded", String(isOpen));
+        mobileMenu.classList.toggle("hidden", !isOpen);
+        openIcon?.classList.toggle("hidden", isOpen);
+        closeIcon?.classList.toggle("hidden", !isOpen);
+        openLabel?.classList.toggle("hidden", isOpen);
+        closeLabel?.classList.toggle("hidden", !isOpen);
+    };
+
+    menuButton?.addEventListener("click", () => {
+        const isOpen = menuButton.getAttribute("aria-expanded") === "true";
+        setMenuState(!isOpen);
+    });
+</script>

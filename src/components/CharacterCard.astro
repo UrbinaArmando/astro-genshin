@@ -36,7 +36,7 @@ const elementIcons: Record<string, string> = {
 };
 
 const elementClass = elementColors[character.element] || "text-gray-400";
-const elementIconSrc = elementIcons[character.element];
+const displayElements = character.elements?.length ? character.elements : [character.element];
 ---
 
 <div
@@ -72,9 +72,19 @@ const elementIconSrc = elementIcons[character.element];
             </span>
         </div>
 
-        {elementIconSrc && (
-            <div class="absolute top-2 left-2 p-1.5 rounded-md bg-slate-900/65 border border-slate-600/70 backdrop-blur-sm">
-                <img src={elementIconSrc} alt={character.element} class="h-4 w-4" loading="lazy" />
+        {displayElements.length > 0 && (
+            <div class="absolute top-2 left-2 p-1.5 rounded-md bg-slate-900/65 backdrop-blur-sm">
+                <div class="flex items-center gap-1">
+                    {displayElements.map((element) => (
+                        <img
+                            src={elementIcons[element]}
+                            alt={element}
+                            title={element}
+                            class="h-6 w-6"
+                            loading="lazy"
+                        />
+                    ))}
+                </div>
             </div>
         )}
     </div>

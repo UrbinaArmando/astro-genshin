@@ -187,7 +187,7 @@ const weaponFilters = [
 				<div
 					data-character-card
 					data-rarity={String(char.rarity)}
-					data-element={char.element}
+					data-elements={(char.elements ?? [char.element]).join("|")}
 					data-weapon={char.weapon}
 					data-name={char.name}
 				>
@@ -268,12 +268,12 @@ const weaponFilters = [
 	const applyFilters = () => {
 		for (const card of characterCards) {
 			const rarity = card.dataset.rarity;
-			const element = card.dataset.element ?? "";
+			const elements = (card.dataset.elements ?? "").split("|").filter(Boolean);
 			const weapon = card.dataset.weapon ?? "";
 			const name = normalizeText(card.dataset.name ?? "");
 
 			const rarityMatch = activeRarityFilter === "all" || rarity === activeRarityFilter;
-			const elementMatch = activeElementFilter === "all" || element === activeElementFilter;
+			const elementMatch = activeElementFilter === "all" || elements.includes(activeElementFilter);
 			const weaponMatch = activeWeaponFilter === "all" || weapon === activeWeaponFilter;
 			const nameMatch = !activeNameQuery || name.includes(activeNameQuery);
 			const shouldShow = rarityMatch && elementMatch && weaponMatch && nameMatch;
