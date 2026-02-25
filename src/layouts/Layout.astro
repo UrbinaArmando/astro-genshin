@@ -5,13 +5,14 @@ import "../styles/global.css";
 
 interface Props {
 	title?: string;
+	lang?: "es" | "en";
 }
 
-const { title = "Genshin Impact Fan Page" } = Astro.props;
+const { title = "Genshin Impact Fan Page", lang = "es" } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang={lang} class="scroll-smooth">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
@@ -28,11 +29,11 @@ const { title = "Genshin Impact Fan Page" } = Astro.props;
 	<body
 		class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col"
 	>
-		<Navbar />
+		<Navbar lang={lang} />
 		<main class="flex-grow">
 			<slot />
 		</main>
-		<Footer />
+		<Footer lang={lang} />
 	</body>
 </html>
 

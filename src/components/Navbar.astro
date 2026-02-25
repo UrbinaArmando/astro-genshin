@@ -1,5 +1,19 @@
 ---
+interface Props {
+    lang?: "es" | "en";
+}
 
+const { lang = "es" } = Astro.props;
+
+const t = {
+    home: lang === "es" ? "Inicio" : "Home",
+    characters: lang === "es" ? "Personajes" : "Characters",
+    tierList: "Tier List",
+    teams: lang === "es" ? "Equipos" : "Teams",
+    openMenu: lang === "es" ? "Abrir menú principal" : "Open main menu"
+};
+
+const basePath = lang === "en" ? "/en/" : "/";
 ---
 
 <nav
@@ -9,7 +23,7 @@
         <div class="flex items-center justify-between h-16">
             <div class="flex items-center">
                 <a
-                    href="/"
+                    href={basePath}
                     class="flex-shrink-0 font-bold text-2xl text-yellow-400 tracking-wider"
                 >
                     GENSHIN.DB
@@ -17,35 +31,50 @@
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
                         <a
-                            href="/"
+                            href={basePath}
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                            >Home</a
+                            >{t.home}</a
                         >
                         <a
-                            href="#characters"
+                            href={`${basePath}#characters`}
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                            >Characters</a
-                        >
-                        <a
-                            href="#"
-                            class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                            >Tier List</a
+                            >{t.characters}</a
                         >
                         <a
                             href="#"
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                            >Teams</a
+                            >{t.tierList}</a
+                        >
+                        <a
+                            href="#"
+                            class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                            >{t.teams}</a
                         >
                     </div>
                 </div>
             </div>
+
+            <div class="hidden md:flex items-center gap-2 text-xs">
+                <a
+                    href="/"
+                    class={`px-2 py-1 rounded border transition-colors ${lang === "es" ? "bg-yellow-500 text-slate-900 border-yellow-400" : "bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700"}`}
+                >
+                    ES
+                </a>
+                <a
+                    href="/en/"
+                    class={`px-2 py-1 rounded border transition-colors ${lang === "en" ? "bg-yellow-500 text-slate-900 border-yellow-400" : "bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700"}`}
+                >
+                    EN
+                </a>
+            </div>
+
             <div class="-mr-2 flex md:hidden">
-                <!-- Mobile menu button placeholder -->
                 <button
                     type="button"
                     class="bg-slate-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-white"
                 >
-                    <span class="sr-only">Open main menu</span>
+                    <span class="sr-only">{t.openMenu}</span>
                     <svg
                         class="block h-6 w-6"
                         xmlns="http://www.w3.org/2000/svg"

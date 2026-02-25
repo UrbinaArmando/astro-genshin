@@ -1,21 +1,20 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import CharacterCard from "../components/CharacterCard.astro";
-import { getCharacters } from "../data/characters";
-import heroGenshin from "../assets/hero-genshin.png";
+import Layout from "../../layouts/Layout.astro";
+import CharacterCard from "../../components/CharacterCard.astro";
+import { getCharacters } from "../../data/characters";
+import heroGenshin from "../../assets/hero-genshin.png";
 
 const characters = await getCharacters();
 ---
 
-<Layout title="Genshin Impact DB - Inicio" lang="es">
-	<!-- Hero Section -->
+<Layout title="Genshin Impact DB - Home" lang="en">
 	<div
 		class="relative h-[600px] flex items-center justify-center overflow-hidden"
 	>
 		<div class="absolute inset-0 z-0">
 			<img
 				src={heroGenshin.src}
-				alt="Fondo de Genshin Impact"
+				alt="Genshin Impact Background"
 				class="w-full h-full object-cover blur-[3px] scale-105 opacity-55"
 			/>
 			<div
@@ -28,7 +27,7 @@ const characters = await getCharacters();
 			<h1
 				class="text-5xl md:text-7xl font-bold mb-6 text-white drop-shadow-lg tracking-tight"
 			>
-				Explora <span
+				Explore <span
 					class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500"
 					>Teyvat</span
 				>
@@ -36,7 +35,7 @@ const characters = await getCharacters();
 			<p
 				class="text-xl md:text-2xl text-slate-200 mb-8 max-w-2xl mx-auto shadow-black drop-shadow-md"
 			>
-				Tu base de datos definitiva de personajes, armas y artefactos de
+				Your ultimate database for characters, weapons, and artifacts in
 				Genshin Impact.
 			</p>
 			<div class="flex flex-wrap gap-4 justify-center">
@@ -44,19 +43,18 @@ const characters = await getCharacters();
 					href="#characters"
 					class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 px-8 rounded-full transition-all hover:scale-105 shadow-[0_0_20px_rgba(234,179,8,0.5)]"
 				>
-					Ver personajes
+					View Characters
 				</a>
 				<a
 					href="#"
 					class="bg-slate-700/80 hover:bg-slate-700 text-white font-bold py-3 px-8 rounded-full transition-all hover:scale-105 border border-slate-600 backdrop-blur-sm"
 				>
-					Mapa interactivo
+					Interactive Map
 				</a>
 			</div>
 		</div>
 	</div>
 
-	<!-- Character List Section -->
 	<section
 		id="characters"
 		class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20"
@@ -64,7 +62,7 @@ const characters = await getCharacters();
 		<div class="flex items-center justify-between mb-12">
 			<div>
 				<h2 class="text-3xl font-bold text-white mb-2">
-					Lista de personajes
+					Character List
 				</h2>
 				<div class="h-1 w-20 bg-yellow-500 rounded-full"></div>
 			</div>
@@ -77,7 +75,7 @@ const characters = await getCharacters();
 						aria-pressed="true"
 						class="px-4 py-2 text-sm font-medium border border-slate-600 rounded-l-lg transition-colors bg-yellow-500 text-slate-900 hover:bg-yellow-400"
 					>
-						Todos
+						All
 					</button>
 					<button
 						type="button"
@@ -114,7 +112,7 @@ const characters = await getCharacters();
 			<button
 				class="text-slate-400 hover:text-white font-medium border-b border-transparent hover:border-white transition-colors pb-1"
 			>
-				Cargar más personajes
+				Load More Characters
 			</button>
 		</div>
 	</section>

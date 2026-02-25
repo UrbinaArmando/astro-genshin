@@ -1,21 +1,35 @@
 ---
+interface Props {
+    lang?: "es" | "en";
+}
+
+const { lang = "es" } = Astro.props;
+
+const t = {
+    legal:
+        lang === "es"
+            ? `© ${new Date().getFullYear()} Genshin Fan Page. No afiliado con HoYoverse.`
+            : `© ${new Date().getFullYear()} Genshin Fan Page. Not affiliated with HoYoverse.`,
+    privacy: lang === "es" ? "Privacidad" : "Privacy Policy",
+    terms: lang === "es" ? "Términos" : "Terms of Service",
+    contact: lang === "es" ? "Contacto" : "Contact"
+};
 
 ---
 
 <footer class="bg-slate-950 text-slate-400 py-8 mt-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <p class="mb-4">
-            &copy; {new Date().getFullYear()} Genshin Fan Page. Not affiliated with
-            HoYoverse.
+            {t.legal}
         </p>
         <div class="flex justify-center space-x-6">
             <a href="#" class="hover:text-white transition-colors"
-                >Privacy Policy</a
+                >{t.privacy}</a
             >
             <a href="#" class="hover:text-white transition-colors"
-                >Terms of Service</a
+                >{t.terms}</a
             >
-            <a href="#" class="hover:text-white transition-colors">Contact</a>
+            <a href="#" class="hover:text-white transition-colors">{t.contact}</a>
         </div>
     </div>
 </footer>
