@@ -1,0 +1,587 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { createCharacterSlug, getCharacters, type Character } from "../../data/characters";
+import { getSpecialPropLabel } from "../../data/specialPropLabels";
+import { t } from "../../i18n";
+
+interface YattaPayload<T> {
+    data?: T;
+}
+
+interface YattaTalentLevel {
+    level: number;
+    costItems?: Record<string, number> | null;
+    coinCost?: number | null;
+    description?: string[];
+    params?: number[];
+}
+
+interface YattaTalent {
+    type: number;
+    name: string;
+    description?: string;
+    icon?: string;
+    promote?: Record<string, YattaTalentLevel>;
+    cooldown?: number;
+    cost?: number;
+}
+
+interface YattaConstellation {
+    id: number;
+    name: string;
+    description?: string;
+    icon?: string;
+}
+
+interface YattaMaterialRef {
+    name: string;
+    rank?: number;
+    icon?: string;
+}
+
+interface YattaUpgradePromote {
+    promoteLevel: number;
+    costItems?: Record<string, number>;
+    coinCost?: number;
+    unlockMaxLevel?: number;
+}
+
+interface YattaAvatarDetail {
+    id: number | string;
+    rank: number;
+    name: string;
+    element?: string;
+    weaponType?: string;
+    region?: string;
+    specialProp?: string;
+    birthday?: number[];
+    fetter?: {
+        title?: string;
+        detail?: string;
+        constellation?: string;
+        native?: string;
+        cv?: Record<string, string>;
+    };
+    talent?: Record<string, YattaTalent>;
+    constellation?: Record<string, YattaConstellation>;
+    upgrade?: {
+        promote?: YattaUpgradePromote[];
+    };
+    items?: Record<string, YattaMaterialRef>;
+}
+
+interface YattaWeaponListItem {
+    id: number;
+    rank: number;
+    type: string;
+    name: string;
+    icon?: string;
+}
+
+interface YattaWeaponList {
+    items?: Record<string, YattaWeaponListItem>;
+}
+
+const YATTA_API_BASE_URL = "https://gi.yatta.moe/api/v2";
+const YATTA_ASSET_BASE_URL = "https://gi.yatta.moe/assets/UI";
+
+const toUiAssetUrl = (icon?: string): string | null =>
+    icon ? `${YATTA_ASSET_BASE_URL}/${icon}.png` : null;
+
+const cleanRichText = (value: string): string =>
+    value
+        .replaceAll(/<color=.*?>/g, "")
+        .replaceAll("</color>", "")
+        .replaceAll("\\n", "\n");
+
+const formatNumber = (value: number, decimals: number): string =>
+    new Intl.NumberFormat("es-ES", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: decimals
+    }).format(value);
+
+const formatParamToken = (value: number, format: string): string => {
+    if (format.includes("I")) {
+        return formatNumber(Math.round(value), 0);
+    }
+
+    if (format.includes("P")) {
+        const decimals = format.includes("F1") ? 1 : 2;
+        return `${formatNumber(value * 100, decimals)}%`;
+    }
+
+    if (format.includes("F1")) {
+        return formatNumber(value, 1);
+    }
+
+    return formatNumber(value, 2);
+};
+
+const formatTalentStat = (line: string, params: number[]): string | null => {
+    if (!line || !line.includes("|")) {
+        return null;
+    }
+
+    const [label, valueTemplate] = line.split("|");
+    if (!label || !valueTemplate) {
+        return null;
+    }
+
+    const parsedValue = valueTemplate.replaceAll(/\{param(\d+):([^}]+)\}/g, (_, token: string, format: string) => {
+        const paramIndex = Number(token) - 1;
+        const paramValue = params[paramIndex];
+
+        if (typeof paramValue !== "number") {
+            return "-";
+        }
+
+        return formatParamToken(paramValue, format);
+    });
+
+    return `${label}: ${parsedValue}`;
+};
+
+const getBirthdayLabel = (birthday?: number[]): string | null => {
+    if (!birthday || birthday.length < 2) {
+        return null;
+    }
+
+    const [month, day] = birthday;
+    if (!month || !day) {
+        return null;
+    }
+
+    return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}`;
+};
+
+const extractNumericId = (value: number | string): number => {
+    if (typeof value === "number") {
+        return value;
+    }
+
+    const match = value.match(/\d+/);
+    return Number(match?.[0] ?? "0");
+};
+
+const getWeaponTypeByCharacterWeapon = (weapon: Character["weapon"]): string => {
+    if (weapon === "Sword") return "WEAPON_SWORD_ONE_HAND";
+    if (weapon === "Claymore") return "WEAPON_CLAYMORE";
+    if (weapon === "Polearm") return "WEAPON_POLE";
+    if (weapon === "Bow") return "WEAPON_BOW";
+    return "WEAPON_CATALYST";
+};
+
+async function fetchYattaResource<T>(lang: "es" | "en", path: string): Promise<T | null> {
+    try {
+        const response = await fetch(`${YATTA_API_BASE_URL}/${lang}/${path}`);
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const payload = (await response.json()) as YattaPayload<T>;
+        return payload.data ?? null;
+    } catch {
+        return null;
+    }
+}
+
+export async function getStaticPaths() {
+    const characters = await getCharacters("es");
+
+    return characters.map((character) => ({
+        params: { slug: createCharacterSlug(character) },
+        props: { character }
+    }));
+}
+
+const { slug = "" } = Astro.params;
+const character = Astro.props.character as Character;
+const basePath = import.meta.env.BASE_URL;
+
+if (!character) {
+    return Astro.redirect(basePath);
+}
+
+const detail = await fetchYattaResource<YattaAvatarDetail>("es", `avatar/${character.id}`);
+const weaponList = await fetchYattaResource<YattaWeaponList>("es", "weapon");
+
+const transitionBase = `character-${slug}`;
+const stars = "★".repeat(character.rarity);
+const backHref = `${basePath}#characters`;
+
+const birthdayLabel = getBirthdayLabel(detail?.birthday);
+const briefDescription = detail?.fetter?.detail ? cleanRichText(detail.fetter.detail) : (character.description ?? t("es", "character.noDescription"));
+const ascensionStatLabel = getSpecialPropLabel(detail?.specialProp, "es");
+
+const talentEntries = (Object.entries(detail?.talent ?? {}) as Array<[string, YattaTalent]>).sort(
+    ([firstKey], [secondKey]) => Number(firstKey) - Number(secondKey)
+);
+
+const constellationEntries = (Object.entries(detail?.constellation ?? {}) as Array<[string, YattaConstellation]>).sort(
+    ([firstKey], [secondKey]) => Number(firstKey) - Number(secondKey)
+);
+
+const materialTotals: Record<string, number> = {};
+let totalMora = 0;
+
+for (const promotion of detail?.upgrade?.promote ?? []) {
+    if (promotion.coinCost) {
+        totalMora += promotion.coinCost;
+    }
+
+    for (const [itemId, amount] of Object.entries(promotion.costItems ?? {})) {
+        materialTotals[itemId] = (materialTotals[itemId] ?? 0) + amount;
+    }
+}
+
+for (const talent of Object.values(detail?.talent ?? {}) as YattaTalent[]) {
+    for (const level of Object.values(talent.promote ?? {})) {
+        if (typeof level.coinCost === "number") {
+            totalMora += level.coinCost;
+        }
+
+        for (const [itemId, amount] of Object.entries(level.costItems ?? {})) {
+            materialTotals[itemId] = (materialTotals[itemId] ?? 0) + amount;
+        }
+    }
+}
+
+const materialEntries = Object.entries(materialTotals)
+    .map(([itemId, amount]) => ({
+        itemId,
+        amount,
+        metadata: detail?.items?.[itemId]
+    }))
+    .sort((first, second) => second.amount - first.amount);
+
+const detectedWeaponType = detail?.weaponType ?? getWeaponTypeByCharacterWeapon(character.weapon);
+const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeaponListItem[])
+    .filter((weapon) => weapon.type === detectedWeaponType)
+    .sort((first, second) => second.rank - first.rank || second.id - first.id)
+    .slice(0, 8);
+
+---
+
+<Layout
+    title={t("es", "character.pageTitle", { name: character.name })}
+    lang="es"
+    description={character.description ?? `${character.name}. ${t("es", "character.profileTitle")}.`}
+    ogImage={character.imageUrl}
+>
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        <a
+            href={backHref}
+            onclick="if (window.history.length > 1) { window.history.back(); return false; }"
+            class="inline-flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-yellow-400 transition-colors"
+        >
+            <span aria-hidden="true">←</span>
+            {t("es", "character.backToCharacters")}
+        </a>
+
+        <article class="mt-6 grid gap-8 lg:grid-cols-[320px_1fr] bg-slate-800/70 border border-slate-700 rounded-2xl p-4 md:p-6 shadow-lg">
+            <div class="rounded-xl overflow-hidden bg-slate-900 border border-slate-700">
+                <img
+                    src={character.imageUrl}
+                    alt={character.name}
+                    class="w-full h-full object-cover"
+                    transition:name={`${transitionBase}-image`}
+                    transition:persist
+                    referrerpolicy="no-referrer"
+                    data-fallback={character.fallbackImageUrl}
+                    onerror="const fallback = this.getAttribute('data-fallback'); if (fallback && this.src !== fallback) { this.src = fallback; return; } this.onerror = null; this.src = '/favicon.svg';"
+                />
+            </div>
+
+            <div>
+                <p class="text-yellow-400 text-sm font-semibold tracking-wide">{t("es", "character.profileTitle")}</p>
+                <h1 class="text-4xl md:text-5xl font-bold text-white mt-2" transition:name={`${transitionBase}-title`} transition:persist>
+                    {character.name}
+                </h1>
+
+                <div class="flex flex-wrap gap-3 mt-5">
+                    <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                        {t("es", "character.rarity")}: <strong class="text-yellow-400">{character.rarity}</strong> ({stars})
+                    </span>
+                    <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                        {t("es", "character.element")}: <strong>{character.elementLabel ?? character.element}</strong>
+                    </span>
+                    <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                        {t("es", "character.weapon")}: <strong>{character.weaponLabel ?? character.weapon}</strong>
+                    </span>
+                    {detail?.region && (
+                        <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                            Region: <strong>{detail.region}</strong>
+                        </span>
+                    )}
+                    {birthdayLabel && (
+                        <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                            Cumpleanos: <strong>{birthdayLabel}</strong>
+                        </span>
+                    )}
+                </div>
+
+                <p class="mt-6 text-slate-300 leading-relaxed text-base md:text-lg">
+                    {briefDescription}
+                </p>
+
+                {detail?.fetter?.title && (
+                    <p class="mt-4 text-sm text-slate-400">
+                        Titulo: <span class="text-slate-200">{detail.fetter.title}</span>
+                    </p>
+                )}
+                {detail?.fetter?.constellation && (
+                    <p class="mt-1 text-sm text-slate-400">
+                        Constelacion: <span class="text-slate-200">{detail.fetter.constellation}</span>
+                    </p>
+                )}
+            </div>
+        </article>
+
+        <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
+            <h2 class="text-2xl font-bold text-white">Lore y perfil</h2>
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                    <p class="text-sm uppercase tracking-wide text-slate-400">Nacion / afiliacion</p>
+                    <p class="text-slate-200 mt-1">{detail?.fetter?.native ?? detail?.region ?? "-"}</p>
+                </div>
+                <div>
+                    <p class="text-sm uppercase tracking-wide text-slate-400">Stat de ascension</p>
+                    <p class="text-slate-200 mt-1">{ascensionStatLabel}</p>
+                </div>
+            </div>
+
+            {detail?.fetter?.cv && (
+                <div class="mt-5">
+                    <p class="text-sm uppercase tracking-wide text-slate-400 mb-2">Voces</p>
+                    <div class="flex flex-wrap gap-2">
+                        {Object.entries(detail.fetter.cv).map(([locale, actor]) => (
+                            <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                                {locale}: <strong>{actor}</strong>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </section>
+
+        <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6" data-talent-tabs>
+            <h2 class="text-2xl font-bold text-white">Talentos</h2>
+
+            {talentEntries.length > 0 ? (
+                <>
+                    <div class="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Talentos">
+                        {talentEntries.map(([talentKey, talent], index) => (
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected={index === 0 ? "true" : "false"}
+                                data-tab-trigger
+                                data-tab-target={`talent-${talentKey}`}
+                                class={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${index === 0 ? "bg-yellow-500 text-slate-900 border-yellow-400" : "bg-slate-900 text-slate-200 border-slate-700 hover:border-slate-500"}`}
+                            >
+                                {talent.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div class="mt-5 space-y-4">
+                        {talentEntries.map(([talentKey, talent], index) => {
+                            const levelOne = talent.promote?.["1"];
+                            const statLines = (levelOne?.description ?? [])
+                                .map((entry) => formatTalentStat(entry, levelOne?.params ?? []))
+                                .filter((entry): entry is string => Boolean(entry));
+                            const plainDescription = cleanRichText(talent.description ?? "");
+
+                            return (
+                                <article
+                                    id={`talent-${talentKey}`}
+                                    role="tabpanel"
+                                    data-tab-panel
+                                    class={`${index === 0 ? "block" : "hidden"} rounded-xl border border-slate-700 bg-slate-900/60 p-4`}
+                                >
+                                    <div class="flex items-start gap-3">
+                                        {toUiAssetUrl(talent.icon) && (
+                                            <img
+                                                src={toUiAssetUrl(talent.icon) ?? ""}
+                                                alt={talent.name}
+                                                class="h-14 w-14 rounded-lg border border-slate-700 bg-slate-800 object-cover"
+                                                loading="lazy"
+                                            />
+                                        )}
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-white">{talent.name}</h3>
+                                            <div class="mt-1 flex flex-wrap gap-2 text-xs text-slate-300">
+                                                {typeof talent.cooldown === "number" && (
+                                                    <span class="px-2 py-1 rounded-md bg-slate-800 border border-slate-700">CD: {talent.cooldown}s</span>
+                                                )}
+                                                {typeof talent.cost === "number" && (
+                                                    <span class="px-2 py-1 rounded-md bg-slate-800 border border-slate-700">Energia: {talent.cost}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {plainDescription && (
+                                        <div class="mt-4 space-y-2 text-slate-300 text-sm leading-relaxed">
+                                            {plainDescription
+                                                .split("\n")
+                                                .filter(Boolean)
+                                                .map((line) => <p>{line}</p>)}
+                                        </div>
+                                    )}
+
+                                    {statLines.length > 0 && (
+                                        <div class="mt-4">
+                                            <p class="text-sm font-medium text-slate-200 mb-2">Escalado (nivel 1)</p>
+                                            <ul class="space-y-1 text-sm text-slate-300">
+                                                {statLines.map((line) => <li>{line}</li>)}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </article>
+                            );
+                        })}
+                    </div>
+                </>
+            ) : (
+                <p class="mt-4 text-slate-400">No hay talentos disponibles.</p>
+            )}
+        </section>
+
+        <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
+            <h2 class="text-2xl font-bold text-white">Constelaciones</h2>
+
+            {constellationEntries.length > 0 ? (
+                <div class="mt-4 grid gap-3">
+                    {constellationEntries.map(([constellationKey, constellation]) => (
+                        <article class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+                            <div class="flex items-start gap-3">
+                                {toUiAssetUrl(constellation.icon) && (
+                                    <img
+                                        src={toUiAssetUrl(constellation.icon) ?? ""}
+                                        alt={constellation.name}
+                                        class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800 object-cover"
+                                        loading="lazy"
+                                    />
+                                )}
+                                <div>
+                                    <h3 class="text-white font-semibold">C{Number(constellationKey) + 1} - {constellation.name}</h3>
+                                    <p class="mt-1 text-sm text-slate-300 leading-relaxed">{cleanRichText(constellation.description ?? "-")}</p>
+                                </div>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            ) : (
+                <p class="mt-4 text-slate-400">No hay constelaciones disponibles.</p>
+            )}
+        </section>
+
+        <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
+            <h2 class="text-2xl font-bold text-white">Materiales de ascension y talentos</h2>
+            <p class="mt-2 text-sm text-slate-400">Total estimado combinando ascension y mejoras de talentos.</p>
+
+            <div class="mt-3">
+                <span class="inline-flex px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                    Mora total: <strong class="ml-1 text-yellow-400">{formatNumber(totalMora, 0)}</strong>
+                </span>
+            </div>
+
+            {materialEntries.length > 0 ? (
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    {materialEntries.map((material) => (
+                        <article class="rounded-xl border border-slate-700 bg-slate-900/60 p-3 flex items-center gap-3">
+                            {toUiAssetUrl(material.metadata?.icon) ? (
+                                <img
+                                    src={toUiAssetUrl(material.metadata?.icon) ?? ""}
+                                    alt={material.metadata?.name ?? material.itemId}
+                                    class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800 object-cover"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800"></div>
+                            )}
+
+                            <div class="min-w-0">
+                                <p class="text-sm text-white font-medium truncate">{material.metadata?.name ?? `Material ${material.itemId}`}</p>
+                                <p class="text-xs text-slate-400">ID: {material.itemId}</p>
+                            </div>
+
+                            <p class="ml-auto text-yellow-400 font-semibold">x{material.amount}</p>
+                        </article>
+                    ))}
+                </div>
+            ) : (
+                <p class="mt-4 text-slate-400">No se encontraron materiales.</p>
+            )}
+        </section>
+
+        <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
+            <h2 class="text-2xl font-bold text-white">Sugerencias de armas</h2>
+            <p class="mt-2 text-sm text-slate-400">Armas de la API filtradas por tipo compatible y ordenadas por rareza.</p>
+
+            {weaponSuggestions.length > 0 ? (
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    {weaponSuggestions.map((weapon) => (
+                        <article class="rounded-xl border border-slate-700 bg-slate-900/60 p-3 flex items-center gap-3">
+                            {toUiAssetUrl(weapon.icon) ? (
+                                <img
+                                    src={toUiAssetUrl(weapon.icon) ?? ""}
+                                    alt={weapon.name}
+                                    class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800 object-cover"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800"></div>
+                            )}
+
+                            <div class="min-w-0">
+                                <p class="text-sm text-white font-medium truncate">{weapon.name}</p>
+                                <p class="text-xs text-slate-400">Rareza: {"★".repeat(weapon.rank)}</p>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            ) : (
+                <p class="mt-4 text-slate-400">No se encontraron armas compatibles.</p>
+            )}
+        </section>
+    </section>
+</Layout>
+
+<script>
+    const talentTabGroups = document.querySelectorAll<HTMLElement>("[data-talent-tabs]");
+
+    for (const group of talentTabGroups) {
+        const triggers = Array.from(group.querySelectorAll<HTMLButtonElement>("[data-tab-trigger]"));
+        const panels = Array.from(group.querySelectorAll<HTMLElement>("[data-tab-panel]"));
+
+        const activateTab = (targetId: string) => {
+            for (const trigger of triggers) {
+                const isActive = trigger.dataset.tabTarget === targetId;
+                trigger.setAttribute("aria-selected", String(isActive));
+                trigger.classList.toggle("bg-yellow-500", isActive);
+                trigger.classList.toggle("text-slate-900", isActive);
+                trigger.classList.toggle("border-yellow-400", isActive);
+                trigger.classList.toggle("bg-slate-900", !isActive);
+                trigger.classList.toggle("text-slate-200", !isActive);
+                trigger.classList.toggle("border-slate-700", !isActive);
+            }
+
+            for (const panel of panels) {
+                panel.classList.toggle("hidden", panel.id !== targetId);
+                panel.classList.toggle("block", panel.id === targetId);
+            }
+        };
+
+        for (const trigger of triggers) {
+            trigger.addEventListener("click", () => {
+                const targetId = trigger.dataset.tabTarget;
+                if (targetId) {
+                    activateTab(targetId);
+                }
+            });
+        }
+    }
+</script>

@@ -1,6 +1,7 @@
 ---
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
+import { ClientRouter } from "astro:transitions";
 import type { Lang } from "../i18n";
 import anemoIcon from "../assets/elements/anemo.png";
 import heroGenshin from "../assets/hero-genshin.png";
@@ -49,6 +50,14 @@ const ogImageUrl = new URL(ogImage, Astro.url).toString();
 			href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
 			rel="stylesheet"
 		/>
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-290N8WET57"></script>
+		<script is:inline>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'G-290N8WET57');
+		</script>
+		<ClientRouter />
 	</head>
 	<body
 		class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col"

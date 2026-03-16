@@ -1,5 +1,7 @@
 ---
 import type { Character } from "../data/characters";
+import { createCharacterSlug } from "../data/characters";
+import type { Lang } from "../i18n";
 import anemoIcon from "../assets/elements/anemo.png";
 import cryoIcon from "../assets/elements/cryo.png";
 import electroIcon from "../assets/elements/electro.png";
@@ -10,9 +12,10 @@ import pyroIcon from "../assets/elements/pyro.png";
 
 interface Props {
     character: Character;
+    lang: Lang;
 }
 
-const { character } = Astro.props;
+const { character, lang } = Astro.props;
 
 // Map elements to colors (simplified)
 const elementColors: Record<string, string> = {
@@ -37,9 +40,16 @@ const elementIcons: Record<string, string> = {
 
 const elementClass = elementColors[character.element] || "text-gray-400";
 const displayElements = character.elements?.length ? character.elements : [character.element];
+const characterSlug = createCharacterSlug(character);
+const basePath = import.meta.env.BASE_URL;
+const detailPath = lang === "en" ? `en/characters/${characterSlug}/` : `personajes/${characterSlug}/`;
+const detailHref = `${basePath}${detailPath}`;
+const transitionBase = `character-${characterSlug}`;
 ---
 
-<div
+<a
+    href={detailHref}
+    data-astro-prefetch
     class="group relative bg-slate-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-slate-700 hover:border-slate-600 block cursor-pointer"
 >
     <div class="aspect-square w-full overflow-hidden bg-slate-900">
@@ -47,6 +57,8 @@ const displayElements = character.elements?.length ? character.elements : [chara
             src={character.imageUrl}
             alt={character.name}
             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            transition:name={`${transitionBase}-image`}
+            transition:persist
             loading="lazy"
             referrerpolicy="no-referrer"
             data-fallback={character.fallbackImageUrl}
@@ -92,6 +104,8 @@ const displayElements = character.elements?.length ? character.elements : [chara
     <div class="p-4">
         <h3
             class="text-lg font-bold text-white mb-1 group-hover:text-yellow-400 transition-colors"
+            transition:name={`${transitionBase}-title`}
+            transition:persist
         >
             {character.name}
         </h3>
@@ -106,4 +120,4 @@ const displayElements = character.elements?.length ? character.elements : [chara
             >
         </div>
     </div>
-</div>
+</a>

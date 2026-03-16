@@ -16,6 +16,34 @@ export interface Character {
     fallbackImageUrl?: string;
 }
 
+const normalizeToSlug = (value: string): string =>
+    value
+        .toLowerCase()
+        .normalize('NFD')
+        .replaceAll(/[\u0300-\u036f]/g, '')
+        .replaceAll(/[^a-z0-9]+/g, '-')
+        .replaceAll(/^-+|-+$/g, '');
+
+export const createCharacterSlug = (character: Pick<Character, 'name' | 'id'>): string => {
+    const nameSlug = normalizeToSlug(character.name);
+    const idSlug = normalizeToSlug(character.id);
+
+    if (!nameSlug && idSlug) {
+        return idSlug;
+    }
+
+    if (!idSlug || idSlug === nameSlug) {
+        return nameSlug || character.id;
+    }
+
+    return `${nameSlug}-${idSlug}`;
+};
+
+export const getCharacterBySlug = (
+    characters: Character[],
+    slug: string
+): Character | undefined => characters.find((character) => createCharacterSlug(character) === slug);
+
 const fallbackCharacters: Character[] = [
     {
         id: 'amber',

@@ -42,6 +42,15 @@ const messages = {
             elementGeo: 'Geo',
             weaponAll: 'Todas las armas',
             loadMore: 'Cargar más personajes'
+        },
+        character: {
+            backToCharacters: 'Volver a personajes',
+            rarity: 'Rareza',
+            element: 'Elemento',
+            weapon: 'Arma',
+            noDescription: 'Estamos preparando mas informacion de este personaje.',
+            profileTitle: 'Perfil del personaje',
+            pageTitle: '{name} | Genshin Hub'
         }
     },
     en: {
@@ -82,6 +91,15 @@ const messages = {
             elementGeo: 'Geo',
             weaponAll: 'All weapons',
             loadMore: 'Load More Characters'
+        },
+        character: {
+            backToCharacters: 'Back to characters',
+            rarity: 'Rarity',
+            element: 'Element',
+            weapon: 'Weapon',
+            noDescription: 'We are preparing more information about this character.',
+            profileTitle: 'Character profile',
+            pageTitle: '{name} | Genshin Hub'
         }
     }
 } as const;
