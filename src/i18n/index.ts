@@ -6,18 +6,20 @@ export const defaultLang: Lang = 'es';
 const messages = {
     es: {
         meta: {
-            homeTitle: 'Genshin Hub'
+            homeTitle: 'Genshin Guides'
         },
         navbar: {
             home: 'Inicio',
             characters: 'Personajes',
+            weapons: 'Armas',
+            artifacts: 'Artefactos',
             tierList: 'Tier List',
             teams: 'Equipos',
             openMenu: 'Abrir menú principal',
             closeMenu: 'Cerrar menú principal'
         },
         footer: {
-            legal: '© {year} Genshin Hub. No afiliado con HoYoverse.',
+            legal: '© {year} Genshin Guides. No afiliado con HoYoverse.',
             privacy: 'Privacidad',
             terms: 'Términos',
             contact: 'Contacto'
@@ -50,23 +52,61 @@ const messages = {
             weapon: 'Arma',
             noDescription: 'Estamos preparando mas informacion de este personaje.',
             profileTitle: 'Perfil del personaje',
-            pageTitle: '{name} | Genshin Hub'
+            pageTitle: '{name} | Genshin Guides'
+        },
+        weapons: {
+            pageTitle: 'Armas | Genshin Guides',
+            pageDescription: 'Explora el listado de armas de Genshin Impact con filtros por tipo y rareza.',
+            title: 'Armas',
+            subtitle: 'Consulta armas por tipo y rareza para planear mejor tus builds.',
+            searchPlaceholder: 'Buscar arma...',
+            filterAllTypes: 'Todos los tipos',
+            filterAllRarities: 'Todas',
+            typeSword: 'Espada',
+            typeClaymore: 'Mandoble',
+            typePolearm: 'Lanza',
+            typeBow: 'Arco',
+            typeCatalyst: 'Catalizador'
+        },
+        tierlist: {
+            pageTitle: 'Tier List | Genshin Guides',
+            pageDescription: 'Tier list referencial de personajes de Genshin Impact con filtros por rol y nivel.',
+            title: 'Tier List de Personajes',
+            subtitle: 'Clasificacion inicial inspirada en el formato de comunidad y ajustable para tu criterio.',
+            disclaimer: 'Nota: esta tier list es una referencia editable y no una copia textual de terceros.',
+            searchPlaceholder: 'Buscar personaje...',
+            filterAllTiers: 'Todos los tiers',
+            filterAllRoles: 'Todos los roles',
+            roleMainDps: 'Main DPS',
+            roleSubDps: 'Sub DPS',
+            roleSupport: 'Support'
+        },
+        artifacts: {
+            pageTitle: 'Artefactos | Genshin Guides',
+            pageDescription: 'Explora sets de artefactos de Genshin Impact con filtros por rareza.',
+            title: 'Artefactos',
+            subtitle: 'Consulta bonos de set y filtra por rareza para optimizar tus builds.',
+            searchPlaceholder: 'Buscar set de artefactos...',
+            filterAllRarities: 'Todas',
+            noBonuses: 'Sin bonos disponibles'
         }
     },
     en: {
         meta: {
-            homeTitle: 'Genshin Hub'
+            homeTitle: 'Genshin Guides'
         },
         navbar: {
             home: 'Home',
             characters: 'Characters',
+            weapons: 'Weapons',
+            artifacts: 'Artifacts',
             tierList: 'Tier List',
             teams: 'Teams',
             openMenu: 'Open main menu',
             closeMenu: 'Close main menu'
         },
         footer: {
-            legal: '© {year} Genshin Hub. Not affiliated with HoYoverse.',
+            legal: '© {year} Genshin Guides. Not affiliated with HoYoverse.',
             privacy: 'Privacy Policy',
             terms: 'Terms of Service',
             contact: 'Contact'
@@ -99,7 +139,43 @@ const messages = {
             weapon: 'Weapon',
             noDescription: 'We are preparing more information about this character.',
             profileTitle: 'Character profile',
-            pageTitle: '{name} | Genshin Hub'
+            pageTitle: '{name} | Genshin Guides'
+        },
+        weapons: {
+            pageTitle: 'Weapons | Genshin Guides',
+            pageDescription: 'Explore the Genshin Impact weapon list with type and rarity filters.',
+            title: 'Weapons',
+            subtitle: 'Browse weapons by type and rarity to plan your builds.',
+            searchPlaceholder: 'Search weapon...',
+            filterAllTypes: 'All types',
+            filterAllRarities: 'All',
+            typeSword: 'Sword',
+            typeClaymore: 'Claymore',
+            typePolearm: 'Polearm',
+            typeBow: 'Bow',
+            typeCatalyst: 'Catalyst'
+        },
+        tierlist: {
+            pageTitle: 'Tier List | Genshin Guides',
+            pageDescription: 'Reference Genshin Impact character tier list with role and tier filters.',
+            title: 'Character Tier List',
+            subtitle: 'Initial ranking inspired by community format and editable for your own criteria.',
+            disclaimer: 'Note: this tier list is an editable reference and not a verbatim copy from third parties.',
+            searchPlaceholder: 'Search character...',
+            filterAllTiers: 'All tiers',
+            filterAllRoles: 'All roles',
+            roleMainDps: 'Main DPS',
+            roleSubDps: 'Sub DPS',
+            roleSupport: 'Support'
+        },
+        artifacts: {
+            pageTitle: 'Artifacts | Genshin Guides',
+            pageDescription: 'Explore Genshin Impact artifact sets with rarity filters.',
+            title: 'Artifacts',
+            subtitle: 'Check set bonuses and filter by rarity to optimize your builds.',
+            searchPlaceholder: 'Search artifact set...',
+            filterAllRarities: 'All',
+            noBonuses: 'No bonuses available'
         }
     }
 } as const;

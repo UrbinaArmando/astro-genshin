@@ -1,0 +1,219 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getWeapons } from "../data/weapons";
+import { t, type Lang } from "../i18n";
+import swordIcon from "../assets/weapons/sword.png";
+import claymoreIcon from "../assets/weapons/claymore.png";
+import polearmIcon from "../assets/weapons/polearm.png";
+import bowIcon from "../assets/weapons/bow.png";
+import catalystIcon from "../assets/weapons/catalyst.png";
+
+interface Props {
+    lang: Lang;
+}
+
+const { lang } = Astro.props;
+const weapons = await getWeapons(lang);
+
+const weaponFilters = [
+    { value: "all", iconSrc: undefined, label: t(lang, "weapons.filterAllTypes") },
+    { value: "Sword", iconSrc: swordIcon.src, label: t(lang, "weapons.typeSword") },
+    { value: "Claymore", iconSrc: claymoreIcon.src, label: t(lang, "weapons.typeClaymore") },
+    { value: "Polearm", iconSrc: polearmIcon.src, label: t(lang, "weapons.typePolearm") },
+    { value: "Bow", iconSrc: bowIcon.src, label: t(lang, "weapons.typeBow") },
+    { value: "Catalyst", iconSrc: catalystIcon.src, label: t(lang, "weapons.typeCatalyst") }
+] as const;
+---
+
+<Layout title={t(lang, "weapons.pageTitle")} lang={lang} description={t(lang, "weapons.pageDescription")}>
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        <header class="mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-white">{t(lang, "weapons.title")}</h1>
+            <p class="mt-3 text-slate-300 max-w-3xl">{t(lang, "weapons.subtitle")}</p>
+        </header>
+
+        <div class="flex flex-wrap items-center gap-3 mb-8">
+            <input
+                id="weapon-search"
+                type="search"
+                placeholder={t(lang, "weapons.searchPlaceholder")}
+                class="w-full sm:w-72 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/60 focus:border-yellow-400/60"
+            />
+
+            <div class="inline-flex rounded-md shadow-sm" role="group" id="weapon-type-filters">
+                {weaponFilters.map((filter, index) => (
+                    <button
+                        type="button"
+                        data-weapon-type-filter={filter.value}
+                        aria-pressed={filter.value === "all" ? "true" : "false"}
+                        title={filter.label}
+                        class={`px-3 py-2 text-sm font-medium border border-slate-600 transition-colors ${index === 0 ? "rounded-l-lg" : ""} ${index === weaponFilters.length - 1 ? "rounded-r-lg" : ""} ${filter.value === "all" ? "bg-yellow-500 text-slate-900 hover:bg-yellow-400" : "bg-slate-700 text-white hover:bg-slate-600"}`}
+                    >
+                        {filter.iconSrc ? (
+                            <img src={filter.iconSrc} alt="" aria-hidden="true" class="h-5 w-5 object-contain" />
+                        ) : (
+                            <span aria-hidden="true">✦</span>
+                        )}
+                        <span class="sr-only">{filter.label}</span>
+                    </button>
+                ))}
+            </div>
+
+            <div class="inline-flex rounded-md shadow-sm" role="group" id="weapon-rarity-filters">
+                <button
+                    type="button"
+                    data-rarity-filter="all"
+                    aria-pressed="true"
+                    class="px-4 py-2 text-sm font-medium border border-slate-600 rounded-l-lg transition-colors bg-yellow-500 text-slate-900 hover:bg-yellow-400"
+                >
+                    {t(lang, "weapons.filterAllRarities")}
+                </button>
+                <button
+                    type="button"
+                    data-rarity-filter="5"
+                    aria-pressed="false"
+                    class="px-3 py-2 text-sm font-medium text-white bg-slate-700 border-t border-b border-slate-600 hover:bg-slate-600 transition-colors"
+                >
+                    5★
+                </button>
+                <button
+                    type="button"
+                    data-rarity-filter="4"
+                    aria-pressed="false"
+                    class="px-3 py-2 text-sm font-medium text-white bg-slate-700 border-t border-b border-slate-600 hover:bg-slate-600 transition-colors"
+                >
+                    4★
+                </button>
+                <button
+                    type="button"
+                    data-rarity-filter="3"
+                    aria-pressed="false"
+                    class="px-3 py-2 text-sm font-medium text-white bg-slate-700 border-t border-b border-slate-600 hover:bg-slate-600 transition-colors"
+                >
+                    3★
+                </button>
+                <button
+                    type="button"
+                    data-rarity-filter="2"
+                    aria-pressed="false"
+                    class="px-3 py-2 text-sm font-medium text-white bg-slate-700 border-t border-b border-slate-600 hover:bg-slate-600 transition-colors"
+                >
+                    2★
+                </button>
+                <button
+                    type="button"
+                    data-rarity-filter="1"
+                    aria-pressed="false"
+                    class="px-3 py-2 text-sm font-medium text-white bg-slate-700 border border-slate-600 rounded-r-lg hover:bg-slate-600 transition-colors"
+                >
+                    1★
+                </button>
+            </div>
+        </div>
+
+        <div id="weapons-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {weapons.map((weapon) => (
+                <article
+                    data-weapon-card
+                    data-rarity={String(weapon.rarity)}
+                    data-type={weapon.type}
+                    data-name={weapon.name}
+                    class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-lg"
+                >
+                    <div class="aspect-square bg-slate-900 p-4 flex items-center justify-center">
+                        <img
+                            src={weapon.imageUrl}
+                            alt={weapon.name}
+                            class="max-h-full max-w-full object-contain"
+                            loading="lazy"
+                            referrerpolicy="no-referrer"
+                            data-fallback={weapon.fallbackImageUrl}
+                            onerror="const fallback = this.getAttribute('data-fallback'); if (fallback && this.src !== fallback) { this.src = fallback; return; } this.onerror = null; this.src = '/favicon.svg';"
+                        />
+                    </div>
+
+                    <div class="p-3">
+                        <h2 class="text-sm font-semibold text-white line-clamp-2 min-h-[2.6rem]">{weapon.name}</h2>
+                        <div class="mt-2 flex items-center justify-between">
+                            <span class="text-xs text-slate-300 px-2 py-0.5 rounded border border-slate-600">{weapon.typeLabel}</span>
+                            <span class="text-yellow-400 text-xs font-medium">{"★".repeat(weapon.rarity)}</span>
+                        </div>
+                    </div>
+                </article>
+            ))}
+        </div>
+    </section>
+</Layout>
+
+<script>
+    const rarityButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-rarity-filter]"));
+    const typeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-weapon-type-filter]"));
+    const searchInput = document.querySelector<HTMLInputElement>("#weapon-search");
+    const weaponCards = Array.from(document.querySelectorAll<HTMLElement>("[data-weapon-card]"));
+
+    let activeRarityFilter = "all";
+    let activeTypeFilter = "all";
+    let activeNameQuery = "";
+
+    const normalizeText = (value: string) =>
+        value
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+
+    const setButtonGroupState = (
+        buttons: HTMLButtonElement[],
+        dataKey: "rarityFilter" | "weaponTypeFilter",
+        activeValue: string
+    ) => {
+        for (const button of buttons) {
+            const buttonValue = dataKey === "rarityFilter"
+                ? (button.dataset.rarityFilter ?? "all")
+                : (button.dataset.weaponTypeFilter ?? "all");
+            const isActive = buttonValue === activeValue;
+            button.setAttribute("aria-pressed", String(isActive));
+            button.classList.toggle("bg-yellow-500", isActive);
+            button.classList.toggle("text-slate-900", isActive);
+            button.classList.toggle("hover:bg-yellow-400", isActive);
+            button.classList.toggle("bg-slate-700", !isActive);
+            button.classList.toggle("text-white", !isActive);
+            button.classList.toggle("hover:bg-slate-600", !isActive);
+        }
+    };
+
+    const applyFilters = () => {
+        for (const card of weaponCards) {
+            const rarity = card.dataset.rarity ?? "";
+            const type = card.dataset.type ?? "";
+            const name = normalizeText(card.dataset.name ?? "");
+
+            const rarityMatch = activeRarityFilter === "all" || rarity === activeRarityFilter;
+            const typeMatch = activeTypeFilter === "all" || type === activeTypeFilter;
+            const nameMatch = !activeNameQuery || name.includes(activeNameQuery);
+
+            card.classList.toggle("hidden", !(rarityMatch && typeMatch && nameMatch));
+        }
+
+        setButtonGroupState(rarityButtons, "rarityFilter", activeRarityFilter);
+        setButtonGroupState(typeButtons, "weaponTypeFilter", activeTypeFilter);
+    };
+
+    for (const button of rarityButtons) {
+        button.addEventListener("click", () => {
+            activeRarityFilter = button.dataset.rarityFilter ?? "all";
+            applyFilters();
+        });
+    }
+
+    for (const button of typeButtons) {
+        button.addEventListener("click", () => {
+            activeTypeFilter = button.dataset.weaponTypeFilter ?? "all";
+            applyFilters();
+        });
+    }
+
+    searchInput?.addEventListener("input", () => {
+        activeNameQuery = normalizeText(searchInput.value.trim());
+        applyFilters();
+    });
+</script>

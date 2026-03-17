@@ -15,7 +15,7 @@ interface Props {
 }
 
 const {
-	title = "Genshin Hub",
+	title = "Genshin Guides",
 	lang = "es",
 	description = "Explore characters, elements and builds from Genshin Impact in a fast bilingual database.",
 	ogImage = heroGenshin.src
@@ -39,7 +39,7 @@ const ogImageUrl = new URL(ogImage, Astro.url).toString();
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonicalUrl.toString()} />
 		<meta property="og:image" content={ogImageUrl} />
-		<meta property="og:site_name" content="Genshin Hub" />
+		<meta property="og:site_name" content="Genshin Guides" />
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />

@@ -5,8 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://urbinaarmando.github.io',
-  base: '/astro-genshin/',
+  site: 'https://genshinguides.com',
+  base: '/',
   vite: {
     plugins: [tailwindcss()]
   }

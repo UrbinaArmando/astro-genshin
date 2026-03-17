@@ -9,6 +9,9 @@ const { lang = "es" } = Astro.props;
 
 const siteBase = import.meta.env.BASE_URL;
 const basePath = getLangPath(lang, siteBase);
+const weaponsPath = lang === "en" ? `${basePath}weapons/` : `${basePath}armas/`;
+const artifactsPath = lang === "en" ? `${basePath}artifacts/` : `${basePath}artefactos/`;
+const tierListPath = `${basePath}tier-list/`;
 const mobileMenuId = `mobile-menu-${lang}`;
 
 const languageLinks = supportedLangs.map((locale) => ({
@@ -29,7 +32,7 @@ const languageLinks = supportedLangs.map((locale) => ({
                     href={basePath}
                     class="flex-shrink-0 font-bold text-2xl text-yellow-400 tracking-wider"
                 >
-                    GENSHIN HUB
+                    GENSHIN GUIDES
                 </a>
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
@@ -44,7 +47,17 @@ const languageLinks = supportedLangs.map((locale) => ({
                             >{t(lang, "navbar.characters")}</a
                         >
                         <a
-                            href="#"
+                            href={weaponsPath}
+                            class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                            >{t(lang, "navbar.weapons")}</a
+                        >
+                        <a
+                            href={artifactsPath}
+                            class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                            >{t(lang, "navbar.artifacts")}</a
+                        >
+                        <a
+                            href={tierListPath}
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                             >{t(lang, "navbar.tierList")}</a
                         >
@@ -128,7 +141,19 @@ const languageLinks = supportedLangs.map((locale) => ({
                 {t(lang, "navbar.characters")}
             </a>
             <a
-                href="#"
+                href={weaponsPath}
+                class="block hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+                {t(lang, "navbar.weapons")}
+            </a>
+            <a
+                href={artifactsPath}
+                class="block hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+                {t(lang, "navbar.artifacts")}
+            </a>
+            <a
+                href={tierListPath}
                 class="block hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
                 {t(lang, "navbar.tierList")}
