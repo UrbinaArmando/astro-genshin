@@ -2,7 +2,9 @@
 import Layout from "../../../layouts/Layout.astro";
 import { createCharacterSlug, getCharacters, type Character } from "../../../data/characters";
 import { createWeaponSlug } from "../../../data/weapons";
+import { getCommunityBuildByCharacterName, type CommunityBuildEntry } from "../../../data/communityBuilds";
 import { getSpecialPropLabel } from "../../../data/specialPropLabels";
+import { matchWeapons, matchArtifacts } from "../../../data/matchApiData";
 import { t } from "../../../i18n";
 
 interface YattaPayload<T> {
@@ -268,10 +270,73 @@ const materialEntries = Object.entries(materialTotals)
     .sort((first, second) => second.amount - first.amount);
 
 const detectedWeaponType = detail?.weaponType ?? getWeaponTypeByCharacterWeapon(character.weapon);
-const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeaponListItem[])
+const fallbackWeaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeaponListItem[])
     .filter((weapon) => weapon.type === detectedWeaponType)
     .sort((first, second) => second.rank - first.rank || second.id - first.id)
     .slice(0, 8);
+
+const communityBuild = getCommunityBuildByCharacterName(character.name);
+
+const communityWeaponSuggestions: YattaWeaponListItem[] = [];
+if (communityBuild?.entries.length) {
+    const rankedLines = communityBuild.entries.flatMap((entry) => entry.weapons);
+    const matchedWeapons = await matchWeapons(rankedLines, "en", 0.8);
+    const seenWeaponIds = new Set<number>();
+
+    for (const matched of matchedWeapons) {
+        if (!matched.fromApi) {
+            continue;
+        }
+
+        const weaponId = Number(matched.id);
+        if (Number.isNaN(weaponId) || seenWeaponIds.has(weaponId)) {
+            continue;
+        }
+
+        const localizedWeapon = weaponList?.items?.[String(weaponId)];
+        if (localizedWeapon?.type && localizedWeapon.type !== detectedWeaponType) {
+            continue;
+        }
+
+        communityWeaponSuggestions.push(
+            localizedWeapon ?? {
+                id: weaponId,
+                rank: matched.rarity,
+                type: detectedWeaponType ?? "",
+                name: matched.name
+            }
+        );
+        seenWeaponIds.add(weaponId);
+
+        if (communityWeaponSuggestions.length >= 8) {
+            break;
+        }
+    }
+}
+
+const weaponSuggestions = communityWeaponSuggestions.length > 0 ? communityWeaponSuggestions : fallbackWeaponSuggestions;
+const usingCommunitySuggestions = communityWeaponSuggestions.length > 0;
+
+// Enrich community builds with API data (weapons and artifacts)
+type EnrichedEntry = CommunityBuildEntry & {
+    weaponsMatched?: Awaited<ReturnType<typeof matchWeapons>>;
+    artifactsMatched?: Awaited<ReturnType<typeof matchArtifacts>>;
+};
+
+const enrichedEntries: EnrichedEntry[] = [];
+if (communityBuild?.entries.length) {
+    for (const entry of communityBuild.entries) {
+        const weaponsMatched = await matchWeapons(entry.weapons, "en");
+        const artifactsMatched = await matchArtifacts(entry.artifacts, "en");
+        enrichedEntries.push({
+            ...entry,
+            weaponsMatched,
+            artifactsMatched
+        });
+    }
+}
+
+const enrichedCommunityBuild = communityBuild ? { ...communityBuild, entries: enrichedEntries } : null;
 
 ---
 
@@ -374,6 +439,117 @@ const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeapon
                 </div>
             )}
         </section>
+
+        {enrichedCommunityBuild && enrichedCommunityBuild.entries.length > 0 && (
+            <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-2xl font-bold text-white">Community build recommendations</h2>
+                    {enrichedCommunityBuild.source && (
+                        <a
+                            href={enrichedCommunityBuild.source}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-sm text-yellow-300 hover:text-yellow-200 transition-colors"
+                        >
+                            View source sheet
+                        </a>
+                    )}
+                </div>
+
+                <div class="mt-4 grid gap-4">
+                    {enrichedCommunityBuild.entries.map((entry) => (
+                        <article class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-lg font-semibold text-white">{entry.role}</h3>
+                                {entry.element && (
+                                    <span class="text-xs px-2 py-1 rounded-md border border-slate-600 bg-slate-800 text-slate-300">
+                                        {entry.element}
+                                    </span>
+                                )}
+                                {entry.updated && (
+                                    <span class="text-xs text-slate-400">Updated: {entry.updated}</span>
+                                )}
+                            </div>
+
+                            {/* Recommended Weapons */}
+                            <div class="mt-4">
+                                <p class="text-sm font-medium text-yellow-300 mb-2">Recommended weapons</p>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {entry.weaponsMatched?.map((weapon) => (
+                                        weapon.fromApi && (
+                                            <a
+                                                href={`${basePath}en/weapons/${createWeaponSlug({ name: weapon.name, id: String(weapon.id) })}/`}
+                                                class="group relative rounded-lg bg-slate-900/80 border border-slate-700 hover:border-yellow-500 transition-colors p-2 flex flex-col items-center text-center"
+                                            >
+                                                <img
+                                                    src={weapon.imageUrl}
+                                                    alt={weapon.name}
+                                                    class="w-12 h-12 object-contain mb-1"
+                                                />
+                                                <span class="text-xs text-slate-200 line-clamp-2">{weapon.name}</span>
+                                                <span class="text-xs text-slate-400 mt-0.5">{'★'.repeat(weapon.rarity)}</span>
+                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-950 border border-slate-600 rounded px-2 py-1 text-xs text-slate-200 whitespace-nowrap z-10">
+                                                    {weapon.typeLabel}
+                                                </div>
+                                            </a>
+                                        )
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Recommended Artifacts */}
+                            <div class="mt-4">
+                                <p class="text-sm font-medium text-yellow-300 mb-2">Recommended artifacts</p>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {entry.artifactsMatched?.map((artifact) => (
+                                        artifact.fromApi && (
+                                            <div class="group relative rounded-lg bg-slate-900/80 border border-slate-700 hover:border-yellow-500 transition-colors p-2 flex flex-col items-center text-center">
+                                                <img
+                                                    src={artifact.imageUrl}
+                                                    alt={artifact.name}
+                                                    class="w-12 h-12 object-contain mb-1 rounded"
+                                                />
+                                                <span class="text-xs text-slate-200 line-clamp-2">{artifact.name}</span>
+                                                <span class="text-xs text-slate-400 mt-0.5">{'★'.repeat(artifact.rarity)}</span>
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Main Stats */}
+                            {entry.mainStats.length > 0 && (
+                                <div class="mt-4">
+                                    <p class="text-sm font-medium text-blue-300">Main Stats</p>
+                                    <div class="mt-1.5 grid grid-cols-3 gap-2 text-xs text-slate-200">
+                                        {entry.mainStats.map((stat) => (
+                                            <div class="bg-slate-800/50 border border-slate-700 rounded px-2 py-1 text-center">
+                                                {stat}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Sub Stats */}
+                            {entry.subStats.length > 0 && (
+                                <div class="mt-4">
+                                    <p class="text-sm font-medium text-purple-300">Prioritized Sub-Stats</p>
+                                    <ul class="mt-1.5 space-y-1 text-xs text-slate-200">
+                                        {entry.subStats.map((stat) => (
+                                            <li class="flex items-start gap-2">
+                                                <span class="text-purple-400 mt-0.5">▸</span>
+                                                <span>{stat}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </article>
+                    ))}
+                </div>
+            </section>
+        )}
 
         <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6" data-talent-tabs>
             <h2 class="text-2xl font-bold text-white">Talents</h2>
@@ -526,36 +702,7 @@ const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeapon
             )}
         </section>
 
-        <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
-            <h2 class="text-2xl font-bold text-white">Weapon suggestions</h2>
-            <p class="mt-2 text-sm text-slate-400">API weapons filtered by compatible type and sorted by rarity.</p>
 
-            {weaponSuggestions.length > 0 ? (
-                <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    {weaponSuggestions.map((weapon) => (
-                        <a href={`${basePath}en/weapons/${createWeaponSlug({ name: weapon.name, id: String(weapon.id) })}/`} class="rounded-xl border border-slate-700 bg-slate-900/60 p-3 flex items-center gap-3 hover:border-slate-500 transition-colors">
-                            {toUiAssetUrl(weapon.icon) ? (
-                                <img
-                                    src={toUiAssetUrl(weapon.icon) ?? ""}
-                                    alt={weapon.name}
-                                    class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800 object-cover"
-                                    loading="lazy"
-                                />
-                            ) : (
-                                <div class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800"></div>
-                            )}
-
-                            <div class="min-w-0">
-                                <p class="text-sm text-white font-medium truncate">{weapon.name}</p>
-                                <p class="text-xs text-slate-400">Rarity: {"★".repeat(weapon.rank)}</p>
-                            </div>
-                        </a>
-                    ))}
-                </div>
-            ) : (
-                <p class="mt-4 text-slate-400">No compatible weapons found.</p>
-            )}
-        </section>
     </section>
 </Layout>
 
