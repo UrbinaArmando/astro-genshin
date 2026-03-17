@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { getTierListEntries, type Tier, type TierRole } from "../data/tierlist";
+import { getTierListEntries, tierOrder, roleOrder, type Tier, type TierRole } from "../data/tierlist";
 import { t, type Lang } from "../i18n";
 
 interface Props {
@@ -17,11 +17,21 @@ const roleLabelByValue: Record<TierRole, string> = {
 };
 
 const tierBadgeClass: Record<Tier, string> = {
-    S: "bg-emerald-500 text-slate-900",
-    A: "bg-sky-500 text-slate-900",
-    B: "bg-amber-400 text-slate-900",
-    C: "bg-slate-500 text-white"
+    SS: "text-orange-200 border-orange-300/50 bg-orange-500/10",
+    S: "text-yellow-200 border-yellow-300/50 bg-yellow-500/10",
+    A: "text-emerald-200 border-emerald-300/50 bg-emerald-500/10",
+    B: "text-sky-200 border-sky-300/50 bg-sky-500/10",
+    C: "text-violet-200 border-violet-300/50 bg-violet-500/10",
+    D: "text-fuchsia-200 border-fuchsia-300/50 bg-fuchsia-500/10"
 };
+
+const grouped = new Map<Tier, Map<TierRole, typeof entries>>();
+for (const tier of tierOrder) {
+    grouped.set(tier, new Map());
+    for (const role of roleOrder) {
+        grouped.get(tier)?.set(role, entries.filter((entry) => entry.tier === tier && entry.role === role));
+    }
+}
 ---
 
 <Layout title={t(lang, "tierlist.pageTitle")} lang={lang} description={t(lang, "tierlist.pageDescription")}>
@@ -29,136 +39,108 @@ const tierBadgeClass: Record<Tier, string> = {
         <header class="mb-8">
             <h1 class="text-4xl md:text-5xl font-bold text-white">{t(lang, "tierlist.title")}</h1>
             <p class="mt-3 text-slate-300 max-w-3xl">{t(lang, "tierlist.subtitle")}</p>
-            <p class="mt-2 text-xs text-slate-400">{t(lang, "tierlist.disclaimer")}</p>
         </header>
 
-        <div class="flex flex-wrap items-center gap-3 mb-8">
-            <input
-                id="tierlist-search"
-                type="search"
-                placeholder={t(lang, "tierlist.searchPlaceholder")}
-                class="w-full sm:w-72 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/60 focus:border-yellow-400/60"
-            />
-
-            <div class="inline-flex rounded-md shadow-sm" role="group" id="tier-filters">
-                <button type="button" data-tier-filter="all" aria-pressed="true" class="px-3 py-2 text-sm font-medium border border-slate-600 rounded-l-lg bg-yellow-500 text-slate-900 hover:bg-yellow-400">
-                    {t(lang, "tierlist.filterAllTiers")}
+        <div class="mb-6 inline-flex rounded-xl border border-slate-700 bg-slate-800/80 p-1" role="tablist" aria-label="Tier list roles">
+            {roleOrder.map((role, index) => (
+                <button
+                    type="button"
+                    role="tab"
+                    data-role-tab={role}
+                    aria-selected={index === 0 ? "true" : "false"}
+                    class={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${index === 0 ? "bg-yellow-500 text-slate-900" : "text-slate-200 hover:bg-slate-700"}`}
+                >
+                    {roleLabelByValue[role]}
                 </button>
-                <button type="button" data-tier-filter="S" aria-pressed="false" class="px-3 py-2 text-sm font-medium border-t border-b border-slate-600 bg-slate-700 text-white hover:bg-slate-600">S</button>
-                <button type="button" data-tier-filter="A" aria-pressed="false" class="px-3 py-2 text-sm font-medium border-t border-b border-slate-600 bg-slate-700 text-white hover:bg-slate-600">A</button>
-                <button type="button" data-tier-filter="B" aria-pressed="false" class="px-3 py-2 text-sm font-medium border-t border-b border-slate-600 bg-slate-700 text-white hover:bg-slate-600">B</button>
-                <button type="button" data-tier-filter="C" aria-pressed="false" class="px-3 py-2 text-sm font-medium border border-slate-600 rounded-r-lg bg-slate-700 text-white hover:bg-slate-600">C</button>
-            </div>
-
-            <div class="inline-flex rounded-md shadow-sm" role="group" id="role-filters">
-                <button type="button" data-role-filter="all" aria-pressed="true" class="px-3 py-2 text-sm font-medium border border-slate-600 rounded-l-lg bg-yellow-500 text-slate-900 hover:bg-yellow-400">
-                    {t(lang, "tierlist.filterAllRoles")}
-                </button>
-                <button type="button" data-role-filter="main_dps" aria-pressed="false" class="px-3 py-2 text-sm font-medium border-t border-b border-slate-600 bg-slate-700 text-white hover:bg-slate-600">{t(lang, "tierlist.roleMainDps")}</button>
-                <button type="button" data-role-filter="sub_dps" aria-pressed="false" class="px-3 py-2 text-sm font-medium border-t border-b border-slate-600 bg-slate-700 text-white hover:bg-slate-600">{t(lang, "tierlist.roleSubDps")}</button>
-                <button type="button" data-role-filter="support" aria-pressed="false" class="px-3 py-2 text-sm font-medium border border-slate-600 rounded-r-lg bg-slate-700 text-white hover:bg-slate-600">{t(lang, "tierlist.roleSupport")}</button>
-            </div>
+            ))}
         </div>
 
-        <div id="tierlist-grid" class="space-y-4">
-            {entries.map((entry) => (
-                <article
-                    data-tierlist-item
-                    data-name={entry.character.name}
-                    data-tier={entry.tier}
-                    data-role={entry.role}
-                    class="grid grid-cols-[auto_1fr] md:grid-cols-[auto_auto_1fr_auto] items-center gap-3 bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                    <span class={`inline-flex items-center justify-center h-8 w-8 rounded-lg font-bold ${tierBadgeClass[entry.tier]}`}>
-                        {entry.tier}
-                    </span>
-
-                    <img
-                        src={entry.character.imageUrl}
-                        alt={entry.character.name}
-                        class="h-14 w-14 rounded-lg object-cover bg-slate-900 border border-slate-700"
-                        loading="lazy"
-                        referrerpolicy="no-referrer"
-                        data-fallback={entry.character.fallbackImageUrl}
-                        onerror="const fallback = this.getAttribute('data-fallback'); if (fallback && this.src !== fallback) { this.src = fallback; return; } this.onerror = null; this.src = '/favicon.svg';"
-                    />
-
-                    <div>
-                        <h2 class="text-white font-semibold">{entry.character.name}</h2>
-                        <p class="text-xs text-slate-400">{entry.character.elementLabel ?? entry.character.element} · {entry.character.weaponLabel ?? entry.character.weapon}</p>
+        <div class="overflow-x-auto rounded-2xl border border-slate-700/70 bg-slate-900/70">
+            <div class="min-w-225">
+                <div class="grid grid-cols-[110px_1fr] bg-slate-800/80 border-b border-slate-700/80">
+                    <div class="p-4"></div>
+                    <div class="p-4 text-center text-sm font-semibold tracking-wide text-slate-100 uppercase" data-current-role-label>
+                        {roleLabelByValue.main_dps}
                     </div>
+                </div>
 
-                    <span class="justify-self-start md:justify-self-end text-xs px-2 py-1 rounded border border-slate-600 text-slate-300">
-                        {roleLabelByValue[entry.role]}
-                    </span>
-                </article>
-            ))}
+                {tierOrder.map((tier) => (
+                    <div class="grid grid-cols-[110px_1fr] border-b border-slate-800 last:border-b-0">
+                        <div class="flex items-center justify-center p-4 bg-slate-900/70">
+                            <span class={`inline-flex items-center justify-center min-w-14 h-12 px-3 rounded-xl border text-2xl font-black tracking-tight ${tierBadgeClass[tier]}`}>
+                                {tier}
+                            </span>
+                        </div>
+
+                        <div class="p-4 border-l border-slate-800 min-h-40 flex items-center">
+                            {roleOrder.map((role, index) => (
+                                <div data-role-panel={role} class={index === 0 ? "w-full" : "hidden w-full"}>
+                                    <div class="flex flex-wrap justify-center gap-4">
+                                        {(grouped.get(tier)?.get(role) ?? []).map((entry) => (
+                                            <article class="w-24 sm:w-28">
+                                                <img
+                                                    src={entry.character.imageUrl}
+                                                    alt={entry.character.name}
+                                                    class="w-full aspect-square rounded-lg object-cover bg-slate-900 border border-slate-700"
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                    referrerpolicy="no-referrer"
+                                                    data-fallback={entry.character.fallbackImageUrl}
+                                                    onerror="const fallback = this.getAttribute('data-fallback'); if (fallback && this.src !== fallback) { this.src = fallback; return; } this.onerror = null; this.src = '/favicon.svg';"
+                                                />
+                                                <p class="mt-1.5 text-xs leading-tight text-slate-200 text-center truncate">{entry.character.name}</p>
+                                            </article>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     </section>
 </Layout>
 
 <script>
-    const tierButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-tier-filter]"));
-    const roleButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-role-filter]"));
-    const searchInput = document.querySelector<HTMLInputElement>("#tierlist-search");
-    const items = Array.from(document.querySelectorAll<HTMLElement>("[data-tierlist-item]"));
+    const initTierRoleTabs = () => {
+        const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-role-tab]"));
+        const panels = Array.from(document.querySelectorAll<HTMLElement>("[data-role-panel]"));
+        const roleLabel = document.querySelector<HTMLElement>("[data-current-role-label]");
 
-    let activeTier = "all";
-    let activeRole = "all";
-    let activeQuery = "";
-
-    const normalizeText = (value: string) =>
-        value
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-
-    const setButtonState = (buttons: HTMLButtonElement[], dataAttr: "tierFilter" | "roleFilter", activeValue: string) => {
-        for (const button of buttons) {
-            const value = dataAttr === "tierFilter" ? (button.dataset.tierFilter ?? "all") : (button.dataset.roleFilter ?? "all");
-            const isActive = value === activeValue;
-            button.setAttribute("aria-pressed", String(isActive));
-            button.classList.toggle("bg-yellow-500", isActive);
-            button.classList.toggle("text-slate-900", isActive);
-            button.classList.toggle("hover:bg-yellow-400", isActive);
-            button.classList.toggle("bg-slate-700", !isActive);
-            button.classList.toggle("text-white", !isActive);
-            button.classList.toggle("hover:bg-slate-600", !isActive);
-        }
-    };
-
-    const applyFilters = () => {
-        for (const item of items) {
-            const tier = item.dataset.tier ?? "";
-            const role = item.dataset.role ?? "";
-            const name = normalizeText(item.dataset.name ?? "");
-
-            const tierMatch = activeTier === "all" || tier === activeTier;
-            const roleMatch = activeRole === "all" || role === activeRole;
-            const nameMatch = !activeQuery || name.includes(activeQuery);
-            item.classList.toggle("hidden", !(tierMatch && roleMatch && nameMatch));
+        if (!tabs.length || !panels.length) {
+            return;
         }
 
-        setButtonState(tierButtons, "tierFilter", activeTier);
-        setButtonState(roleButtons, "roleFilter", activeRole);
+        const setActiveRole = (role: string) => {
+            for (const tab of tabs) {
+                const isActive = tab.dataset.roleTab === role;
+                tab.setAttribute("aria-selected", String(isActive));
+                tab.classList.toggle("bg-yellow-500", isActive);
+                tab.classList.toggle("text-slate-900", isActive);
+                tab.classList.toggle("text-slate-200", !isActive);
+                tab.classList.toggle("hover:bg-slate-700", !isActive);
+            }
+
+            for (const panel of panels) {
+                panel.classList.toggle("hidden", panel.dataset.rolePanel !== role);
+            }
+
+            const activeTab = tabs.find((tab) => tab.dataset.roleTab === role);
+            if (activeTab && roleLabel) {
+                roleLabel.textContent = activeTab.textContent?.trim() ?? "";
+            }
+        };
+
+        for (const tab of tabs) {
+            tab.addEventListener("click", () => {
+                setActiveRole(tab.dataset.roleTab ?? "main_dps");
+            });
+        }
+
+        setActiveRole("main_dps");
     };
 
-    for (const button of tierButtons) {
-        button.addEventListener("click", () => {
-            activeTier = button.dataset.tierFilter ?? "all";
-            applyFilters();
-        });
-    }
-
-    for (const button of roleButtons) {
-        button.addEventListener("click", () => {
-            activeRole = button.dataset.roleFilter ?? "all";
-            applyFilters();
-        });
-    }
-
-    searchInput?.addEventListener("input", () => {
-        activeQuery = normalizeText(searchInput.value.trim());
-        applyFilters();
-    });
+    initTierRoleTabs();
+    document.addEventListener("astro:page-load", initTierRoleTabs);
 </script>

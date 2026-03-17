@@ -88,11 +88,27 @@ const YATTA_ASSET_BASE_URL = "https://gi.yatta.moe/assets/UI";
 const toUiAssetUrl = (icon?: string): string | null =>
     icon ? `${YATTA_ASSET_BASE_URL}/${icon}.png` : null;
 
+const cleanApiTokenText = (value: string): string =>
+    value
+        .replaceAll(/\{LINK#[^}]+\}/g, "")
+        .replaceAll("{/LINK}", "")
+        .replaceAll(/\{LAYOUT_[A-Z]+#[^}]+\}/g, "")
+        .replaceAll("{NON_BREAK_SPACE}", " ")
+        .replaceAll(/\{?NON_BREAK_SPACE\}?/g, " ")
+        .replaceAll(/\{[A-Z_]+#[^}]+\}/g, "")
+        .replaceAll(/(^|\n)#(?=\S)/g, "$1")
+        .replaceAll(/[ \t]{2,}/g, " ")
+        .trim();
+
 const cleanRichText = (value: string): string =>
     value
         .replaceAll(/<color=.*?>/g, "")
         .replaceAll("</color>", "")
-        .replaceAll("\\n", "\n");
+        .replaceAll("\\n", "\n")
+        .split("\n")
+        .map((line) => cleanApiTokenText(line))
+        .filter(Boolean)
+        .join("\n");
 
 const formatNumber = (value: number, decimals: number): string =>
     new Intl.NumberFormat("es-ES", {
@@ -122,7 +138,11 @@ const formatTalentStat = (line: string, params: number[]): string | null => {
         return null;
     }
 
-    const [label, valueTemplate] = line.split("|");
+    const [rawLabel, rawValueTemplate] = line.split("|");
+    const label = cleanApiTokenText(rawLabel ?? "");
+    const valueTemplate = (rawValueTemplate ?? "")
+        .replaceAll("{NON_BREAK_SPACE}", " ")
+        .replaceAll(/\{?NON_BREAK_SPACE\}?/g, " ");
     if (!label || !valueTemplate) {
         return null;
     }
@@ -138,7 +158,7 @@ const formatTalentStat = (line: string, params: number[]): string | null => {
         return formatParamToken(paramValue, format);
     });
 
-    return `${label}: ${parsedValue}`;
+    return `${label}: ${cleanApiTokenText(parsedValue)}`;
 };
 
 const getBirthdayLabel = (birthday?: number[]): string | null => {
@@ -260,6 +280,20 @@ const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeapon
     .filter((weapon) => weapon.type === detectedWeaponType)
     .sort((first, second) => second.rank - first.rank || second.id - first.id)
     .slice(0, 8);
+
+const createWeaponSlugFromSuggestion = (weapon: Pick<YattaWeaponListItem, "id" | "name">): string => {
+    const normalize = (value: string): string =>
+        value
+            .toLowerCase()
+            .normalize("NFD")
+            .replaceAll(/[\u0300-\u036f]/g, "")
+            .replaceAll(/[^a-z0-9]+/g, "-")
+            .replaceAll(/^-+|-+$/g, "");
+
+    const nameSlug = normalize(weapon.name);
+    const idSlug = normalize(String(weapon.id));
+    return nameSlug && idSlug ? `${nameSlug}-${idSlug}` : (nameSlug || idSlug);
+};
 
 ---
 
@@ -503,7 +537,6 @@ const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeapon
 
                             <div class="min-w-0">
                                 <p class="text-sm text-white font-medium truncate">{material.metadata?.name ?? `Material ${material.itemId}`}</p>
-                                <p class="text-xs text-slate-400">ID: {material.itemId}</p>
                             </div>
 
                             <p class="ml-auto text-yellow-400 font-semibold">x{material.amount}</p>
@@ -522,7 +555,7 @@ const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeapon
             {weaponSuggestions.length > 0 ? (
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
                     {weaponSuggestions.map((weapon) => (
-                        <article class="rounded-xl border border-slate-700 bg-slate-900/60 p-3 flex items-center gap-3">
+                        <a href={`${basePath}armas/${createWeaponSlugFromSuggestion(weapon)}/`} class="rounded-xl border border-slate-700 bg-slate-900/60 p-3 flex items-center gap-3 hover:border-slate-500 transition-colors">
                             {toUiAssetUrl(weapon.icon) ? (
                                 <img
                                     src={toUiAssetUrl(weapon.icon) ?? ""}
@@ -538,7 +571,7 @@ const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeapon
                                 <p class="text-sm text-white font-medium truncate">{weapon.name}</p>
                                 <p class="text-xs text-slate-400">Rareza: {"★".repeat(weapon.rank)}</p>
                             </div>
-                        </article>
+                        </a>
                     ))}
                 </div>
             ) : (

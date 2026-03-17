@@ -1,0 +1,209 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import {
+    cleanWeaponRichText,
+    createWeaponSlug,
+    formatWeaponPropValue,
+    getWeaponBySlug,
+    getWeaponDetail,
+    getWeaponPropLabel,
+    getWeapons,
+    type Weapon
+} from "../../data/weapons";
+
+export async function getStaticPaths() {
+    const weapons = await getWeapons("es");
+
+    return weapons.map((weapon) => ({
+        params: { slug: createWeaponSlug(weapon) },
+        props: { weapon }
+    }));
+}
+
+const { slug = "" } = Astro.params;
+const basePath = import.meta.env.BASE_URL;
+
+const weaponFromProps = Astro.props.weapon as Weapon | undefined;
+const weapon = weaponFromProps ?? getWeaponBySlug(await getWeapons("es"), slug);
+
+if (!weapon) {
+    return Astro.redirect(`${basePath}armas/`);
+}
+
+const detail = await getWeaponDetail(weapon.id, "es");
+const weaponDescription = cleanWeaponRichText(detail?.description ?? "");
+
+const propList = detail?.upgrade?.prop ?? [];
+const baseAttackProp = propList.find((prop) => prop.propType === "FIGHT_PROP_BASE_ATTACK");
+const secondaryProp = propList.find((prop) => prop.propType !== "FIGHT_PROP_BASE_ATTACK");
+
+const passive = detail?.affix ? Object.values(detail.affix)[0] : undefined;
+const passiveLevels = Object.entries(passive?.upgrade ?? {})
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([key, text]) => ({
+        label: `R${Number(key) + 1}`,
+        text: cleanWeaponRichText(text)
+    }));
+
+const promoteLevels = (detail?.upgrade?.promote ?? [])
+    .filter((level) => typeof level.promoteLevel === "number" && typeof level.unlockMaxLevel === "number")
+    .sort((a, b) => (a.promoteLevel ?? 0) - (b.promoteLevel ?? 0));
+
+const materialTotals: Record<string, number> = {};
+let totalMora = 0;
+
+for (const level of promoteLevels) {
+    if (typeof level.coinCost === "number") {
+        totalMora += level.coinCost;
+    }
+
+    for (const [itemId, amount] of Object.entries(level.costItems ?? {})) {
+        materialTotals[itemId] = (materialTotals[itemId] ?? 0) + amount;
+    }
+}
+
+const materialEntries = Object.entries(materialTotals)
+    .map(([itemId, amount]) => ({
+        itemId,
+        amount,
+        metadata: detail?.items?.[itemId]
+    }))
+    .sort((a, b) => b.amount - a.amount);
+
+const numberFormatter = new Intl.NumberFormat("es-ES");
+---
+
+<Layout
+    title={`${weapon.name} | Armas | Genshin Guides`}
+    lang="es"
+    description={`${weapon.name}: arma de ${weapon.typeLabel} (${weapon.rarity}★) en Genshin Impact.`}
+    ogImage={weapon.imageUrl}
+>
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        <a
+            href={`${basePath}armas/`}
+            class="inline-flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-yellow-400 transition-colors"
+        >
+            Volver a armas
+        </a>
+
+        <article class="mt-6 grid gap-8 md:grid-cols-[320px_1fr] bg-slate-800/70 border border-slate-700 rounded-2xl p-4 md:p-6 shadow-lg">
+            <div class="rounded-xl overflow-hidden bg-slate-900 border border-slate-700 p-6 flex items-center justify-center">
+                <img
+                    src={weapon.imageUrl}
+                    alt={weapon.name}
+                    class="max-h-72 w-full object-contain"
+                    referrerpolicy="no-referrer"
+                    data-fallback={weapon.fallbackImageUrl}
+                    onerror="const fallback = this.getAttribute('data-fallback'); if (fallback && this.src !== fallback) { this.src = fallback; return; } this.onerror = null; this.src = '/favicon.svg';"
+                />
+            </div>
+
+            <div>
+                <p class="text-yellow-400 text-sm font-semibold tracking-wide">Detalle de arma</p>
+                <h1 class="text-3xl md:text-4xl font-bold text-white mt-2">{weapon.name}</h1>
+
+                <div class="flex flex-wrap gap-3 mt-5">
+                    <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                        Tipo: <strong>{weapon.typeLabel}</strong>
+                    </span>
+                    <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                        Rareza: <strong class="text-yellow-400">{"★".repeat(weapon.rarity)}</strong>
+                    </span>
+                    {baseAttackProp && (
+                        <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                            {getWeaponPropLabel(baseAttackProp.propType, "es")}: <strong>{formatWeaponPropValue(baseAttackProp.initValue, baseAttackProp.propType, "es")}</strong>
+                        </span>
+                    )}
+                    {secondaryProp && (
+                        <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                            {getWeaponPropLabel(secondaryProp.propType, "es")}: <strong>{formatWeaponPropValue(secondaryProp.initValue, secondaryProp.propType, "es")}</strong>
+                        </span>
+                    )}
+                </div>
+
+                {weaponDescription ? (
+                    <p class="mt-6 text-slate-300 leading-relaxed">{weaponDescription}</p>
+                ) : (
+                    <p class="mt-6 text-slate-300 leading-relaxed">Estamos ampliando esta ficha con información técnica adicional.</p>
+                )}
+            </div>
+        </article>
+
+        {passive && passiveLevels.length > 0 && (
+            <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
+                <h2 class="text-2xl font-bold text-white">Habilidad pasiva</h2>
+                <p class="mt-2 text-slate-300"><strong>{passive.name}</strong></p>
+                <div class="mt-4 grid gap-3">
+                    {passiveLevels.map((level) => (
+                        <article class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+                            <h3 class="text-sm font-semibold text-yellow-300">{level.label}</h3>
+                            <p class="mt-1 text-sm text-slate-300 leading-relaxed">{level.text}</p>
+                        </article>
+                    ))}
+                </div>
+            </section>
+        )}
+
+        <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
+            <h2 class="text-2xl font-bold text-white">Materiales de ascensión</h2>
+            <p class="mt-2 text-sm text-slate-400">Totales aproximados para subir el arma hasta nivel máximo.</p>
+            <div class="mt-3 inline-flex px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm">
+                Mora total: <strong class="ml-1 text-yellow-400">{numberFormatter.format(totalMora)}</strong>
+            </div>
+
+            {materialEntries.length > 0 ? (
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    {materialEntries.map((material) => (
+                        <article class="rounded-xl border border-slate-700 bg-slate-900/60 p-3 flex items-center gap-3">
+                            {material.metadata?.icon ? (
+                                <img
+                                    src={`https://gi.yatta.moe/assets/UI/${material.metadata.icon}.png`}
+                                    alt={material.metadata?.name ?? "Material"}
+                                    class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800 object-cover"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div class="h-12 w-12 rounded-lg border border-slate-700 bg-slate-800"></div>
+                            )}
+                            <div class="min-w-0">
+                                <p class="text-sm text-white font-medium truncate">{material.metadata?.name ?? "Material"}</p>
+                            </div>
+                            <p class="ml-auto text-yellow-400 font-semibold">x{material.amount}</p>
+                        </article>
+                    ))}
+                </div>
+            ) : (
+                <p class="mt-4 text-slate-400">No se encontraron materiales para esta arma.</p>
+            )}
+        </section>
+
+        {promoteLevels.length > 0 && (
+            <section class="mt-8 bg-slate-800/60 border border-slate-700 rounded-2xl p-5 md:p-6">
+                <h2 class="text-2xl font-bold text-white">Coste por fase</h2>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full text-sm text-slate-300">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-700">
+                                <th class="text-left py-2 pr-4">Fase</th>
+                                <th class="text-left py-2 pr-4">Límite de nivel</th>
+                                <th class="text-left py-2 pr-4">Aventura requerida</th>
+                                <th class="text-left py-2">Mora</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {promoteLevels.map((level) => (
+                                <tr class="border-b border-slate-800/70">
+                                    <td class="py-2 pr-4">{level.promoteLevel}</td>
+                                    <td class="py-2 pr-4">{level.unlockMaxLevel}</td>
+                                    <td class="py-2 pr-4">{level.requiredPlayerLevel ?? "-"}</td>
+                                    <td class="py-2">{numberFormatter.format(level.coinCost ?? 0)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        )}
+    </section>
+</Layout>

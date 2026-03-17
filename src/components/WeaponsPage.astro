@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { getWeapons } from "../data/weapons";
+import { createWeaponSlug, getWeapons } from "../data/weapons";
 import { t, type Lang } from "../i18n";
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
 
 const { lang } = Astro.props;
 const weapons = await getWeapons(lang);
+const basePath = import.meta.env.BASE_URL;
 
 const weaponTypeIcons = {
     Sword: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Amenoma.png",
@@ -116,12 +117,13 @@ const weaponFilters = [
 
         <div id="weapons-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {weapons.map((weapon) => (
-                <article
+                <a
+                    href={lang === "en" ? `${basePath}en/weapons/${createWeaponSlug(weapon)}/` : `${basePath}armas/${createWeaponSlug(weapon)}/`}
                     data-weapon-card
                     data-rarity={String(weapon.rarity)}
                     data-type={weapon.type}
                     data-name={weapon.name}
-                    class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-lg"
+                    class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-lg block hover:border-slate-500 transition-colors"
                 >
                     <div class="aspect-square bg-slate-900 p-4 flex items-center justify-center">
                         <img
@@ -142,7 +144,7 @@ const weaponFilters = [
                             <span class="text-yellow-400 text-xs font-medium">{"★".repeat(weapon.rarity)}</span>
                         </div>
                     </div>
-                </article>
+                </a>
             ))}
         </div>
     </section>
