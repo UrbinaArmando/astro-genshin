@@ -1,5 +1,65 @@
 ---
 import HomePage from "../components/HomePage.astro";
+
+const baseUrl = import.meta.env.BASE_URL;
+const esHomePath = baseUrl;
+const enHomePath = `${baseUrl}en/`;
 ---
+
+<script is:inline define:vars={{ esHomePath, enHomePath }}>
+	(() => {
+		const decisionKey = "gg_lang_decision_v1";
+		if (localStorage.getItem(decisionKey)) {
+			return;
+		}
+
+		const esPath = esHomePath;
+		const enPath = enHomePath;
+
+		const normalizePath = (value) => value.endsWith("/") ? value : `${value}/`;
+		const currentPath = normalizePath(window.location.pathname);
+		if (currentPath !== normalizePath(esPath)) {
+			return;
+		}
+
+		const spanishCountries = new Set([
+			"AR", "BO", "CL", "CO", "CR", "CU", "DO", "EC", "SV", "GQ",
+			"GT", "HN", "MX", "NI", "PA", "PY", "PE", "PR", "ES", "UY", "VE"
+		]);
+
+		const getCountryFromCloudflare = async () => {
+			try {
+				const response = await fetch("/cdn-cgi/trace", { cache: "no-store" });
+				if (!response.ok) return "";
+				const content = await response.text();
+				const line = content.split("\n").find((item) => item.startsWith("loc="));
+				return line ? line.slice(4).trim().toUpperCase() : "";
+			} catch {
+				return "";
+			}
+		};
+
+		const detectPreferredLang = async () => {
+			const countryCode = await getCountryFromCloudflare();
+			if (countryCode && spanishCountries.has(countryCode)) {
+				return "es";
+			}
+
+			const browserPrefersSpanish = [
+				...(navigator.languages ?? []),
+				navigator.language ?? ""
+			].some((lang) => lang.toLowerCase().startsWith("es"));
+
+			return browserPrefersSpanish ? "es" : "en";
+		};
+
+		void detectPreferredLang().then((preferredLang) => {
+			localStorage.setItem(decisionKey, preferredLang);
+			if (preferredLang === "en") {
+				window.location.replace(enPath);
+			}
+		});
+	})();
+</script>
 
 <HomePage lang="es" />
