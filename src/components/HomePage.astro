@@ -23,6 +23,53 @@ interface Props {
 
 const { lang } = Astro.props;
 const characters = await getCharacters(lang);
+const isEnglish = lang === "en";
+const canonical = isEnglish ? "https://genshinguides.com/en/" : "https://genshinguides.com/";
+const alternates = {
+	es: "https://genshinguides.com/",
+	en: "https://genshinguides.com/en/",
+	"x-default": "https://genshinguides.com/"
+};
+const homeSeo = {
+	title: isEnglish ? "Genshin Guides | Characters, Teams, Weapons and Artifacts" : "Genshin Guides | Personajes, Equipos, Armas y Artefactos",
+	description: isEnglish
+		? "Explore optimized builds, meta teams, weapons and artifacts for Genshin Impact in a fast bilingual guide."
+		: "Explora builds optimizadas, equipos meta, armas y artefactos de Genshin Impact en una guia bilingue y rapida.",
+	ogImage: isEnglish ? "/og/home-en.svg" : "/og/home-es.svg",
+	ogImageAlt: isEnglish
+		? "Genshin Guides homepage preview with characters, teams, weapons and artifacts"
+		: "Vista previa de Genshin Guides con personajes, equipos, armas y artefactos"
+};
+
+const webSiteSchema = {
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	name: "Genshin Guides",
+	url: "https://genshinguides.com/",
+	inLanguage: ["es", "en"],
+	description: isEnglish
+		? "Bilingual Genshin Impact guide with characters, teams, weapons and artifacts."
+		: "Guia bilingue de Genshin Impact con personajes, equipos, armas y artefactos.",
+	potentialAction: {
+		"@type": "SearchAction",
+		target: "https://genshinguides.com/?q={search_term_string}",
+		"query-input": "required name=search_term_string"
+	}
+};
+
+const webPageSchema = {
+	"@context": "https://schema.org",
+	"@type": "WebPage",
+	name: homeSeo.title,
+	url: canonical,
+	inLanguage: isEnglish ? "en" : "es",
+	description: homeSeo.description,
+	isPartOf: {
+		"@type": "WebSite",
+		name: "Genshin Guides",
+		url: "https://genshinguides.com/"
+	}
+};
 
 const elementFilters = [
 	{ value: "all", iconSrc: undefined, label: t(lang, "home.elementAll") },
@@ -45,7 +92,16 @@ const weaponFilters = [
 ] as const;
 ---
 
-<Layout title={t(lang, "meta.homeTitle")} lang={lang}>
+<Layout
+	title={homeSeo.title}
+	lang={lang}
+	description={homeSeo.description}
+	ogImage={homeSeo.ogImage}
+	ogImageAlt={homeSeo.ogImageAlt}
+	canonical={canonical}
+	alternates={alternates}
+	structuredData={[webSiteSchema, webPageSchema]}
+>
 	<div
 		class="relative h-[600px] flex items-center justify-center overflow-hidden"
 	>
@@ -83,7 +139,9 @@ const weaponFilters = [
 					{t(lang, "home.ctaCharacters")}
 				</a>
 				<a
-					href="#"
+					href="https://genshin-impact-map.appsample.com/"
+					target="_blank"
+					rel="noopener noreferrer"
 					class="bg-slate-700/80 hover:bg-slate-700 text-white font-bold py-3 px-8 rounded-full transition-all hover:scale-105 border border-slate-600 backdrop-blur-sm"
 				>
 					{t(lang, "home.ctaMap")}
@@ -196,13 +254,6 @@ const weaponFilters = [
 			))}
 		</div>
 
-		<div class="mt-12 text-center">
-			<button
-				class="text-slate-400 hover:text-white font-medium border-b border-transparent hover:border-white transition-colors pb-1"
-			>
-				{t(lang, "home.loadMore")}
-			</button>
-		</div>
 	</section>
 </Layout>
 

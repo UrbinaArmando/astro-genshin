@@ -89,6 +89,14 @@ const messages = {
             searchPlaceholder: 'Buscar set de artefactos...',
             filterAllRarities: 'Todas',
             noBonuses: 'Sin bonos disponibles'
+        },
+        teams: {
+            pageTitle: 'Equipos | Genshin Guides',
+            pageDescription: 'Composiciones de equipos meta para Genshin Impact con arquetipos y busqueda.',
+            title: 'Equipos Meta',
+            subtitle: 'Selecciones recomendadas para Abismo y contenido dificil, organizadas por arquetipo.',
+            searchPlaceholder: 'Buscar equipo o personaje...',
+            filterAllArchetypes: 'Todos los arquetipos'
         }
     },
     en: {
@@ -176,6 +184,14 @@ const messages = {
             searchPlaceholder: 'Search artifact set...',
             filterAllRarities: 'All',
             noBonuses: 'No bonuses available'
+        },
+        teams: {
+            pageTitle: 'Teams | Genshin Guides',
+            pageDescription: 'Meta Genshin Impact team compositions with archetypes and search filters.',
+            title: 'Meta Teams',
+            subtitle: 'Recommended lineups for Abyss and endgame content, organized by archetype.',
+            searchPlaceholder: 'Search team or character...',
+            filterAllArchetypes: 'All archetypes'
         }
     }
 } as const;
@@ -212,7 +228,7 @@ export const t = (
 ): string => {
     const template = getMessageByPath(lang, key);
 
-    return template.replace(/\{(\w+)\}/g, (_, token: string) => String(vars[token] ?? `{${token}}`));
+    return template.replaceAll(/\{(\w+)\}/g, (_, token: string) => String(vars[token] ?? `{${token}}`));
 };
 
 export const getLangPath = (lang: Lang, baseUrl: string): string => {

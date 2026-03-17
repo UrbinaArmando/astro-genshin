@@ -12,17 +12,34 @@ interface Props {
 	lang?: Lang;
 	description?: string;
 	ogImage?: string;
+	ogImageAlt?: string;
+	ogType?: "website" | "article";
+	canonical?: string;
+	robots?: string;
+	alternates?: Partial<Record<Lang | "x-default", string>>;
+	structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
 const {
 	title = "Genshin Guides",
 	lang = "es",
 	description = "Explore characters, elements and builds from Genshin Impact in a fast bilingual database.",
-	ogImage = heroGenshin.src
+	ogImage = heroGenshin.src,
+	ogImageAlt = "Genshin Guides preview card",
+	ogType = "website",
+	canonical,
+	robots = "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1",
+	alternates,
+	structuredData
 } = Astro.props;
 
-const canonicalUrl = Astro.url;
-const ogImageUrl = new URL(ogImage, Astro.url).toString();
+const canonicalUrl = canonical ? new URL(canonical, Astro.url) : Astro.url;
+const ogImageUrl = new URL(ogImage, canonicalUrl).toString();
+const structuredDataList = Array.isArray(structuredData)
+	? structuredData
+	: structuredData
+		? [structuredData]
+		: [];
 ---
 
 <!doctype html>
@@ -34,16 +51,32 @@ const ogImageUrl = new URL(ogImage, Astro.url).toString();
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 		<meta name="description" content={description} />
-		<meta property="og:type" content="website" />
+		<meta name="robots" content={robots} />
+		<link rel="canonical" href={canonicalUrl.toString()} />
+		{alternates &&
+			Object.entries(alternates).map(([hreflang, href]) =>
+				href ? <link rel="alternate" hreflang={hreflang} href={href} /> : null
+			)}
+		<meta property="og:type" content={ogType} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonicalUrl.toString()} />
 		<meta property="og:image" content={ogImageUrl} />
+		<meta property="og:image:secure_url" content={ogImageUrl} />
+		<meta property="og:image:alt" content={ogImageAlt} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
 		<meta property="og:site_name" content="Genshin Guides" />
+		<meta property="og:locale" content={lang === "es" ? "es_ES" : "en_US"} />
+		<meta name="twitter:site" content="@genshinguides" />
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={ogImageUrl} />
+		<meta name="twitter:image:alt" content={ogImageAlt} />
+		{structuredDataList.map((schema) => (
+			<script type="application/ld+json" set:html={JSON.stringify(schema)}></script>
+		))}
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
@@ -63,7 +96,7 @@ const ogImageUrl = new URL(ogImage, Astro.url).toString();
 		class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col"
 	>
 		<Navbar lang={lang} />
-		<main class="flex-grow">
+		<main class="grow">
 			<slot />
 		</main>
 		<Footer lang={lang} />

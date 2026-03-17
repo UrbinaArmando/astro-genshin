@@ -2,11 +2,6 @@
 import Layout from "../layouts/Layout.astro";
 import { getWeapons } from "../data/weapons";
 import { t, type Lang } from "../i18n";
-import swordIcon from "../assets/weapons/sword.png";
-import claymoreIcon from "../assets/weapons/claymore.png";
-import polearmIcon from "../assets/weapons/polearm.png";
-import bowIcon from "../assets/weapons/bow.png";
-import catalystIcon from "../assets/weapons/catalyst.png";
 
 interface Props {
     lang: Lang;
@@ -15,13 +10,21 @@ interface Props {
 const { lang } = Astro.props;
 const weapons = await getWeapons(lang);
 
+const weaponTypeIcons = {
+    Sword: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Amenoma.png",
+    Claymore: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Kunwu.png",
+    Polearm: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Santika.png",
+    Bow: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Worldbane.png",
+    Catalyst: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Ayus.png"
+} as const;
+
 const weaponFilters = [
     { value: "all", iconSrc: undefined, label: t(lang, "weapons.filterAllTypes") },
-    { value: "Sword", iconSrc: swordIcon.src, label: t(lang, "weapons.typeSword") },
-    { value: "Claymore", iconSrc: claymoreIcon.src, label: t(lang, "weapons.typeClaymore") },
-    { value: "Polearm", iconSrc: polearmIcon.src, label: t(lang, "weapons.typePolearm") },
-    { value: "Bow", iconSrc: bowIcon.src, label: t(lang, "weapons.typeBow") },
-    { value: "Catalyst", iconSrc: catalystIcon.src, label: t(lang, "weapons.typeCatalyst") }
+    { value: "Sword", iconSrc: weaponTypeIcons.Sword, label: t(lang, "weapons.typeSword") },
+    { value: "Claymore", iconSrc: weaponTypeIcons.Claymore, label: t(lang, "weapons.typeClaymore") },
+    { value: "Polearm", iconSrc: weaponTypeIcons.Polearm, label: t(lang, "weapons.typePolearm") },
+    { value: "Bow", iconSrc: weaponTypeIcons.Bow, label: t(lang, "weapons.typeBow") },
+    { value: "Catalyst", iconSrc: weaponTypeIcons.Catalyst, label: t(lang, "weapons.typeCatalyst") }
 ] as const;
 ---
 

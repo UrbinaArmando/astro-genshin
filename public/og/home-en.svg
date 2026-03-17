@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Genshin Guides - Characters, Teams, Weapons and Artifacts</title>
+  <desc id="desc">Open Graph card for the English homepage of Genshin Guides.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="990" cy="120" r="210" fill="#facc15" fill-opacity="0.1"/>
+  <circle cx="180" cy="620" r="260" fill="#38bdf8" fill-opacity="0.1"/>
+  <rect x="72" y="80" width="170" height="42" rx="10" fill="#0b1220" stroke="#475569"/>
+  <text x="92" y="108" fill="#f8fafc" font-size="22" font-family="Outfit, Segoe UI, Arial, sans-serif" font-weight="700">GENSHIN</text>
+  <text x="198" y="108" fill="#facc15" font-size="22" font-family="Outfit, Segoe UI, Arial, sans-serif" font-weight="700">GUIDES</text>
+
+  <text x="72" y="220" fill="#f8fafc" font-size="70" font-family="Outfit, Segoe UI, Arial, sans-serif" font-weight="800">Your Teyvat guide</text>
+  <text x="72" y="290" fill="#f8fafc" font-size="70" font-family="Outfit, Segoe UI, Arial, sans-serif" font-weight="800">in one place</text>
+
+  <text x="72" y="360" fill="#cbd5e1" font-size="34" font-family="Outfit, Segoe UI, Arial, sans-serif" font-weight="500">Characters, meta teams, weapons and artifacts</text>
+
+  <rect x="72" y="430" width="1056" height="3" fill="url(#accent)"/>
+
+  <text x="72" y="510" fill="#f8fafc" font-size="28" font-family="Outfit, Segoe UI, Arial, sans-serif" font-weight="700">genshinguides.com</text>
+  <text x="72" y="552" fill="#94a3b8" font-size="22" font-family="Outfit, Segoe UI, Arial, sans-serif">Optimized builds for Abyss and endgame content</text>
+</svg>

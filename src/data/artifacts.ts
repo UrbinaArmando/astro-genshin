@@ -24,7 +24,7 @@ interface YattaReliquaryResponse {
 }
 
 const YATTA_API_BASE_URL = "https://gi.yatta.moe/api/v2";
-const YATTA_ASSET_BASE_URL = "https://gi.yatta.moe/assets/UI";
+const YATTA_RELIQUARY_ASSET_BASE_URL = "https://gi.yatta.moe/assets/UI/reliquary";
 
 const fallbackArtifacts: ArtifactSet[] = [
     {
@@ -32,8 +32,8 @@ const fallbackArtifacts: ArtifactSet[] = [
         name: "Resolution of Sojourner",
         rarity: 4,
         bonuses: ["ATK +18%", "Increases Charged Attack CRIT Rate by 30%"],
-        imageUrl: `${YATTA_ASSET_BASE_URL}/UI_RelicIcon_10001_4.png`,
-        fallbackImageUrl: `${YATTA_ASSET_BASE_URL}/UI_RelicIcon_10001_4.png`
+        imageUrl: `${YATTA_RELIQUARY_ASSET_BASE_URL}/UI_RelicIcon_10001_4.png`,
+        fallbackImageUrl: `${YATTA_RELIQUARY_ASSET_BASE_URL}/UI_RelicIcon_10001_4.png`
     }
 ];
 
@@ -66,7 +66,7 @@ const mapYattaItemToArtifact = (key: string, item: YattaReliquaryItem): Artifact
         return null;
     }
 
-    const imageUrl = `${YATTA_ASSET_BASE_URL}/${item.icon}.png`;
+    const imageUrl = `${YATTA_RELIQUARY_ASSET_BASE_URL}/${item.icon}.png`;
 
     return {
         id: key,

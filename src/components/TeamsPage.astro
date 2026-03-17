@@ -1,0 +1,171 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getTeams, getTeamArchetypeLabel, type TeamArchetype } from "../data/teams";
+import { t, type Lang } from "../i18n";
+
+interface Props {
+    lang: Lang;
+}
+
+const { lang } = Astro.props;
+const teams = await getTeams(lang);
+
+const archetypeFilters: TeamArchetype[] = [
+    "freeze",
+    "vape",
+    "melt",
+    "hyperbloom",
+    "quicken",
+    "electrocharged",
+    "national",
+    "plunge",
+    "mono"
+];
+
+const archetypeColorClass: Record<TeamArchetype, string> = {
+    freeze: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40",
+    vape: "bg-orange-500/20 text-orange-300 border-orange-500/40",
+    melt: "bg-rose-500/20 text-rose-300 border-rose-500/40",
+    hyperbloom: "bg-lime-500/20 text-lime-300 border-lime-500/40",
+    electrocharged: "bg-blue-500/20 text-blue-300 border-blue-500/40",
+    quicken: "bg-violet-500/20 text-violet-300 border-violet-500/40",
+    national: "bg-red-500/20 text-red-300 border-red-500/40",
+    plunge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+    mono: "bg-amber-500/20 text-amber-300 border-amber-500/40"
+};
+---
+
+<Layout title={t(lang, "teams.pageTitle")} lang={lang} description={t(lang, "teams.pageDescription")}>
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        <header class="mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-white">{t(lang, "teams.title")}</h1>
+            <p class="mt-3 text-slate-300 max-w-3xl">{t(lang, "teams.subtitle")}</p>
+        </header>
+
+        <div class="flex flex-wrap items-center gap-3 mb-8">
+            <input
+                id="teams-search"
+                type="search"
+                placeholder={t(lang, "teams.searchPlaceholder")}
+                class="w-full sm:w-72 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/60 focus:border-yellow-400/60"
+            />
+
+            <div class="inline-flex rounded-md shadow-sm" role="group" id="teams-archetype-filters">
+                <button
+                    type="button"
+                    data-archetype-filter="all"
+                    aria-pressed="true"
+                    class="px-3 py-2 text-sm font-medium border border-slate-600 rounded-l-lg bg-yellow-500 text-slate-900 hover:bg-yellow-400"
+                >
+                    {t(lang, "teams.filterAllArchetypes")}
+                </button>
+                {archetypeFilters.map((archetype, index) => (
+                    <button
+                        type="button"
+                        data-archetype-filter={archetype}
+                        aria-pressed="false"
+                        class={`px-3 py-2 text-sm font-medium border-t border-b border-slate-600 bg-slate-700 text-white hover:bg-slate-600 ${index === archetypeFilters.length - 1 ? "border-r rounded-r-lg" : ""}`}
+                    >
+                        {getTeamArchetypeLabel(archetype, lang)}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        <div id="teams-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {teams.map((team) => (
+                <article
+                    data-team-card
+                    data-name={team.name}
+                    data-archetype={team.archetype}
+                    data-members={team.members.map((member) => member.character.name).join("|")}
+                    class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h2 class="text-xl font-semibold text-white">{team.name}</h2>
+                            <p class="text-sm text-slate-300 mt-1">{team.note}</p>
+                        </div>
+                        <span class={`px-2.5 py-1 rounded-lg text-xs border ${archetypeColorClass[team.archetype]}`}>
+                            {getTeamArchetypeLabel(team.archetype, lang)}
+                        </span>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {team.members.map((member) => (
+                            <div class="bg-slate-900 border border-slate-700 rounded-lg p-2">
+                                <img
+                                    src={member.character.imageUrl}
+                                    alt={member.character.name}
+                                    class="h-20 w-full object-cover rounded-md bg-slate-950"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer"
+                                    data-fallback={member.character.fallbackImageUrl}
+                                    onerror="const fallback = this.getAttribute('data-fallback'); if (fallback && this.src !== fallback) { this.src = fallback; return; } this.onerror = null; this.src = '/favicon.svg';"
+                                />
+                                <p class="text-xs text-white font-medium mt-2 truncate">{member.character.name}</p>
+                                <p class="text-[11px] text-slate-400 truncate">{member.role}</p>
+                            </div>
+                        ))}
+                    </div>
+                </article>
+            ))}
+        </div>
+    </section>
+</Layout>
+
+<script>
+    const archetypeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-archetype-filter]"));
+    const searchInput = document.querySelector<HTMLInputElement>("#teams-search");
+    const teamCards = Array.from(document.querySelectorAll<HTMLElement>("[data-team-card]"));
+
+    let activeArchetype = "all";
+    let activeQuery = "";
+
+    const normalizeText = (value: string) =>
+        value
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+
+    const setButtonsState = () => {
+        for (const button of archetypeButtons) {
+            const value = button.dataset.archetypeFilter ?? "all";
+            const isActive = value === activeArchetype;
+            button.setAttribute("aria-pressed", String(isActive));
+            button.classList.toggle("bg-yellow-500", isActive);
+            button.classList.toggle("text-slate-900", isActive);
+            button.classList.toggle("hover:bg-yellow-400", isActive);
+            button.classList.toggle("bg-slate-700", !isActive);
+            button.classList.toggle("text-white", !isActive);
+            button.classList.toggle("hover:bg-slate-600", !isActive);
+        }
+    };
+
+    const applyFilters = () => {
+        for (const card of teamCards) {
+            const archetype = card.dataset.archetype ?? "";
+            const name = normalizeText(card.dataset.name ?? "");
+            const members = normalizeText(card.dataset.members ?? "");
+
+            const archetypeMatch = activeArchetype === "all" || archetype === activeArchetype;
+            const nameMatch = !activeQuery || name.includes(activeQuery) || members.includes(activeQuery);
+
+            card.classList.toggle("hidden", !(archetypeMatch && nameMatch));
+        }
+
+        setButtonsState();
+    };
+
+    for (const button of archetypeButtons) {
+        button.addEventListener("click", () => {
+            activeArchetype = button.dataset.archetypeFilter ?? "all";
+            applyFilters();
+        });
+    }
+
+    searchInput?.addEventListener("input", () => {
+        activeQuery = normalizeText(searchInput.value.trim());
+        applyFilters();
+    });
+</script>

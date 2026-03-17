@@ -12,6 +12,7 @@ const basePath = getLangPath(lang, siteBase);
 const weaponsPath = lang === "en" ? `${basePath}weapons/` : `${basePath}armas/`;
 const artifactsPath = lang === "en" ? `${basePath}artifacts/` : `${basePath}artefactos/`;
 const tierListPath = `${basePath}tier-list/`;
+const teamsPath = lang === "en" ? `${basePath}teams/` : `${basePath}equipos/`;
 const mobileMenuId = `mobile-menu-${lang}`;
 
 const languageLinks = supportedLangs.map((locale) => ({
@@ -30,7 +31,7 @@ const languageLinks = supportedLangs.map((locale) => ({
             <div class="flex items-center">
                 <a
                     href={basePath}
-                    class="flex-shrink-0 font-bold text-2xl text-yellow-400 tracking-wider"
+                       class="shrink-0 font-bold text-2xl text-yellow-400 tracking-wider"
                 >
                     GENSHIN GUIDES
                 </a>
@@ -62,7 +63,7 @@ const languageLinks = supportedLangs.map((locale) => ({
                             >{t(lang, "navbar.tierList")}</a
                         >
                         <a
-                            href="#"
+                            href={teamsPath}
                             class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                             >{t(lang, "navbar.teams")}</a
                         >
@@ -159,7 +160,7 @@ const languageLinks = supportedLangs.map((locale) => ({
                 {t(lang, "navbar.tierList")}
             </a>
             <a
-                href="#"
+                href={teamsPath}
                 class="block hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
                 {t(lang, "navbar.teams")}
