@@ -26,17 +26,8 @@ const normalizeToSlug = (value: string): string =>
 
 export const createCharacterSlug = (character: Pick<Character, 'name' | 'id'>): string => {
     const nameSlug = normalizeToSlug(character.name);
-    const idSlug = normalizeToSlug(character.id);
 
-    if (!nameSlug && idSlug) {
-        return idSlug;
-    }
-
-    if (!idSlug || idSlug === nameSlug) {
-        return nameSlug || character.id;
-    }
-
-    return `${nameSlug}-${idSlug}`;
+    return nameSlug || normalizeToSlug(character.id) || character.id;
 };
 
 export const getCharacterBySlug = (

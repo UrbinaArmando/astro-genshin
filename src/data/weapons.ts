@@ -20,17 +20,8 @@ const normalizeToSlug = (value: string): string =>
 
 export const createWeaponSlug = (weapon: Pick<Weapon, "name" | "id">): string => {
     const nameSlug = normalizeToSlug(weapon.name);
-    const idSlug = normalizeToSlug(weapon.id);
 
-    if (!nameSlug && idSlug) {
-        return idSlug;
-    }
-
-    if (!idSlug || idSlug === nameSlug) {
-        return nameSlug || weapon.id;
-    }
-
-    return `${nameSlug}-${idSlug}`;
+    return nameSlug || normalizeToSlug(weapon.id) || weapon.id;
 };
 
 export const getWeaponBySlug = (weapons: Weapon[], slug: string): Weapon | undefined =>
@@ -97,6 +88,7 @@ export interface YattaWeaponDetail {
     };
     items?: Record<string, YattaWeaponItemRef>;
 }
+
 
 interface YattaWeaponDetailResponse {
     data?: YattaWeaponDetail;
