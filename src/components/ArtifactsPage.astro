@@ -84,54 +84,70 @@ const artifacts = await getArtifacts(lang);
 </Layout>
 
 <script>
-    const rarityButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-rarity-filter]"));
-    const searchInput = document.querySelector<HTMLInputElement>("#artifact-search");
-    const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-artifact-card]"));
-
-    let activeRarity = "all";
-    let activeQuery = "";
-
-    const normalizeText = (value: string) =>
-        value
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-
-    const setButtonState = (activeValue: string) => {
-        for (const button of rarityButtons) {
-            const value = button.dataset.rarityFilter ?? "all";
-            const isActive = value === activeValue;
-            button.setAttribute("aria-pressed", String(isActive));
-            button.classList.toggle("bg-yellow-500", isActive);
-            button.classList.toggle("text-slate-900", isActive);
-            button.classList.toggle("hover:bg-yellow-400", isActive);
-            button.classList.toggle("bg-slate-700", !isActive);
-            button.classList.toggle("text-white", !isActive);
-            button.classList.toggle("hover:bg-slate-600", !isActive);
-        }
-    };
-
-    const applyFilters = () => {
-        for (const card of cards) {
-            const rarity = card.dataset.rarity ?? "";
-            const name = normalizeText(card.dataset.name ?? "");
-            const rarityMatch = activeRarity === "all" || rarity === activeRarity;
-            const nameMatch = !activeQuery || name.includes(activeQuery);
-            card.classList.toggle("hidden", !(rarityMatch && nameMatch));
+    const initArtifactFilters = () => {
+        const section = document.querySelector("#artifacts-grid")?.closest("section");
+        if (!(section instanceof HTMLElement) || section.dataset.filtersInitialized === "true") {
+            return;
         }
 
-        setButtonState(activeRarity);
-    };
+        section.dataset.filtersInitialized = "true";
+        const rarityButtons = Array.from(section.querySelectorAll<HTMLButtonElement>("[data-rarity-filter]"));
+        const searchInput = section.querySelector<HTMLInputElement>("#artifact-search");
+        const cards = Array.from(section.querySelectorAll<HTMLElement>("[data-artifact-card]"));
 
-    for (const button of rarityButtons) {
-        button.addEventListener("click", () => {
-            activeRarity = button.dataset.rarityFilter ?? "all";
+        let activeRarity = "all";
+        let activeQuery = "";
+
+        const normalizeText = (value: string) =>
+            value
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+
+        const setButtonState = (activeValue: string) => {
+            for (const button of rarityButtons) {
+                const value = button.dataset.rarityFilter ?? "all";
+                const isActive = value === activeValue;
+                button.setAttribute("aria-pressed", String(isActive));
+                button.classList.toggle("bg-yellow-500", isActive);
+                button.classList.toggle("text-slate-900", isActive);
+                button.classList.toggle("hover:bg-yellow-400", isActive);
+                button.classList.toggle("bg-slate-700", !isActive);
+                button.classList.toggle("text-white", !isActive);
+                button.classList.toggle("hover:bg-slate-600", !isActive);
+            }
+        };
+
+        const applyFilters = () => {
+            for (const card of cards) {
+                const rarity = card.dataset.rarity ?? "";
+                const name = normalizeText(card.dataset.name ?? "");
+                const rarityMatch = activeRarity === "all" || rarity === activeRarity;
+                const nameMatch = !activeQuery || name.includes(activeQuery);
+                card.classList.toggle("hidden", !(rarityMatch && nameMatch));
+            }
+
+            setButtonState(activeRarity);
+        };
+
+        section.addEventListener("click", (event) => {
+            const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button") : null;
+            if (!target?.dataset.rarityFilter) {
+                return;
+            }
+
+            activeRarity = target.dataset.rarityFilter;
             applyFilters();
         });
-    }
 
-    searchInput?.addEventListener("input", () => {
-        activeQuery = normalizeText(searchInput.value.trim());
+        searchInput?.addEventListener("input", () => {
+            activeQuery = normalizeText(searchInput.value.trim());
+            applyFilters();
+        }, { passive: true });
+
         applyFilters();
-    });
+    };
+
+    initArtifactFilters();
+    document.addEventListener("astro:page-load", initArtifactFilters);
 </script>

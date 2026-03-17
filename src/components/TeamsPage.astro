@@ -115,57 +115,73 @@ const archetypeColorClass: Record<TeamArchetype, string> = {
 </Layout>
 
 <script>
-    const archetypeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-archetype-filter]"));
-    const searchInput = document.querySelector<HTMLInputElement>("#teams-search");
-    const teamCards = Array.from(document.querySelectorAll<HTMLElement>("[data-team-card]"));
-
-    let activeArchetype = "all";
-    let activeQuery = "";
-
-    const normalizeText = (value: string) =>
-        value
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-
-    const setButtonsState = () => {
-        for (const button of archetypeButtons) {
-            const value = button.dataset.archetypeFilter ?? "all";
-            const isActive = value === activeArchetype;
-            button.setAttribute("aria-pressed", String(isActive));
-            button.classList.toggle("bg-yellow-500", isActive);
-            button.classList.toggle("text-slate-900", isActive);
-            button.classList.toggle("hover:bg-yellow-400", isActive);
-            button.classList.toggle("bg-slate-700", !isActive);
-            button.classList.toggle("text-white", !isActive);
-            button.classList.toggle("hover:bg-slate-600", !isActive);
-        }
-    };
-
-    const applyFilters = () => {
-        for (const card of teamCards) {
-            const archetype = card.dataset.archetype ?? "";
-            const name = normalizeText(card.dataset.name ?? "");
-            const members = normalizeText(card.dataset.members ?? "");
-
-            const archetypeMatch = activeArchetype === "all" || archetype === activeArchetype;
-            const nameMatch = !activeQuery || name.includes(activeQuery) || members.includes(activeQuery);
-
-            card.classList.toggle("hidden", !(archetypeMatch && nameMatch));
+    const initTeamFilters = () => {
+        const section = document.querySelector("#teams-grid")?.closest("section");
+        if (!(section instanceof HTMLElement) || section.dataset.filtersInitialized === "true") {
+            return;
         }
 
-        setButtonsState();
-    };
+        section.dataset.filtersInitialized = "true";
+        const archetypeButtons = Array.from(section.querySelectorAll<HTMLButtonElement>("[data-archetype-filter]"));
+        const searchInput = section.querySelector<HTMLInputElement>("#teams-search");
+        const teamCards = Array.from(section.querySelectorAll<HTMLElement>("[data-team-card]"));
 
-    for (const button of archetypeButtons) {
-        button.addEventListener("click", () => {
-            activeArchetype = button.dataset.archetypeFilter ?? "all";
+        let activeArchetype = "all";
+        let activeQuery = "";
+
+        const normalizeText = (value: string) =>
+            value
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+
+        const setButtonsState = () => {
+            for (const button of archetypeButtons) {
+                const value = button.dataset.archetypeFilter ?? "all";
+                const isActive = value === activeArchetype;
+                button.setAttribute("aria-pressed", String(isActive));
+                button.classList.toggle("bg-yellow-500", isActive);
+                button.classList.toggle("text-slate-900", isActive);
+                button.classList.toggle("hover:bg-yellow-400", isActive);
+                button.classList.toggle("bg-slate-700", !isActive);
+                button.classList.toggle("text-white", !isActive);
+                button.classList.toggle("hover:bg-slate-600", !isActive);
+            }
+        };
+
+        const applyFilters = () => {
+            for (const card of teamCards) {
+                const archetype = card.dataset.archetype ?? "";
+                const name = normalizeText(card.dataset.name ?? "");
+                const members = normalizeText(card.dataset.members ?? "");
+
+                const archetypeMatch = activeArchetype === "all" || archetype === activeArchetype;
+                const nameMatch = !activeQuery || name.includes(activeQuery) || members.includes(activeQuery);
+
+                card.classList.toggle("hidden", !(archetypeMatch && nameMatch));
+            }
+
+            setButtonsState();
+        };
+
+        section.addEventListener("click", (event) => {
+            const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button") : null;
+            if (!target?.dataset.archetypeFilter) {
+                return;
+            }
+
+            activeArchetype = target.dataset.archetypeFilter;
             applyFilters();
         });
-    }
 
-    searchInput?.addEventListener("input", () => {
-        activeQuery = normalizeText(searchInput.value.trim());
+        searchInput?.addEventListener("input", () => {
+            activeQuery = normalizeText(searchInput.value.trim());
+            applyFilters();
+        }, { passive: true });
+
         applyFilters();
-    });
+    };
+
+    initTeamFilters();
+    document.addEventListener("astro:page-load", initTeamFilters);
 </script>

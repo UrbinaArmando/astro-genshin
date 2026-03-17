@@ -151,74 +151,91 @@ const weaponFilters = [
 </Layout>
 
 <script>
-    const rarityButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-rarity-filter]"));
-    const typeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-weapon-type-filter]"));
-    const searchInput = document.querySelector<HTMLInputElement>("#weapon-search");
-    const weaponCards = Array.from(document.querySelectorAll<HTMLElement>("[data-weapon-card]"));
-
-    let activeRarityFilter = "all";
-    let activeTypeFilter = "all";
-    let activeNameQuery = "";
-
-    const normalizeText = (value: string) =>
-        value
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-
-    const setButtonGroupState = (
-        buttons: HTMLButtonElement[],
-        dataKey: "rarityFilter" | "weaponTypeFilter",
-        activeValue: string
-    ) => {
-        for (const button of buttons) {
-            const buttonValue = dataKey === "rarityFilter"
-                ? (button.dataset.rarityFilter ?? "all")
-                : (button.dataset.weaponTypeFilter ?? "all");
-            const isActive = buttonValue === activeValue;
-            button.setAttribute("aria-pressed", String(isActive));
-            button.classList.toggle("bg-yellow-500", isActive);
-            button.classList.toggle("text-slate-900", isActive);
-            button.classList.toggle("hover:bg-yellow-400", isActive);
-            button.classList.toggle("bg-slate-700", !isActive);
-            button.classList.toggle("text-white", !isActive);
-            button.classList.toggle("hover:bg-slate-600", !isActive);
-        }
-    };
-
-    const applyFilters = () => {
-        for (const card of weaponCards) {
-            const rarity = card.dataset.rarity ?? "";
-            const type = card.dataset.type ?? "";
-            const name = normalizeText(card.dataset.name ?? "");
-
-            const rarityMatch = activeRarityFilter === "all" || rarity === activeRarityFilter;
-            const typeMatch = activeTypeFilter === "all" || type === activeTypeFilter;
-            const nameMatch = !activeNameQuery || name.includes(activeNameQuery);
-
-            card.classList.toggle("hidden", !(rarityMatch && typeMatch && nameMatch));
+    const initWeaponFilters = () => {
+        const section = document.querySelector("#weapons-grid")?.closest("section");
+        if (!(section instanceof HTMLElement) || section.dataset.filtersInitialized === "true") {
+            return;
         }
 
-        setButtonGroupState(rarityButtons, "rarityFilter", activeRarityFilter);
-        setButtonGroupState(typeButtons, "weaponTypeFilter", activeTypeFilter);
-    };
+        section.dataset.filtersInitialized = "true";
+        const rarityButtons = Array.from(section.querySelectorAll<HTMLButtonElement>("[data-rarity-filter]"));
+        const typeButtons = Array.from(section.querySelectorAll<HTMLButtonElement>("[data-weapon-type-filter]"));
+        const searchInput = section.querySelector<HTMLInputElement>("#weapon-search");
+        const weaponCards = Array.from(section.querySelectorAll<HTMLElement>("[data-weapon-card]"));
 
-    for (const button of rarityButtons) {
-        button.addEventListener("click", () => {
-            activeRarityFilter = button.dataset.rarityFilter ?? "all";
-            applyFilters();
+        let activeRarityFilter = "all";
+        let activeTypeFilter = "all";
+        let activeNameQuery = "";
+
+        const normalizeText = (value: string) =>
+            value
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+
+        const setButtonGroupState = (
+            buttons: HTMLButtonElement[],
+            dataKey: "rarityFilter" | "weaponTypeFilter",
+            activeValue: string
+        ) => {
+            for (const button of buttons) {
+                const buttonValue = dataKey === "rarityFilter"
+                    ? (button.dataset.rarityFilter ?? "all")
+                    : (button.dataset.weaponTypeFilter ?? "all");
+                const isActive = buttonValue === activeValue;
+                button.setAttribute("aria-pressed", String(isActive));
+                button.classList.toggle("bg-yellow-500", isActive);
+                button.classList.toggle("text-slate-900", isActive);
+                button.classList.toggle("hover:bg-yellow-400", isActive);
+                button.classList.toggle("bg-slate-700", !isActive);
+                button.classList.toggle("text-white", !isActive);
+                button.classList.toggle("hover:bg-slate-600", !isActive);
+            }
+        };
+
+        const applyFilters = () => {
+            for (const card of weaponCards) {
+                const rarity = card.dataset.rarity ?? "";
+                const type = card.dataset.type ?? "";
+                const name = normalizeText(card.dataset.name ?? "");
+
+                const rarityMatch = activeRarityFilter === "all" || rarity === activeRarityFilter;
+                const typeMatch = activeTypeFilter === "all" || type === activeTypeFilter;
+                const nameMatch = !activeNameQuery || name.includes(activeNameQuery);
+
+                card.classList.toggle("hidden", !(rarityMatch && typeMatch && nameMatch));
+            }
+
+            setButtonGroupState(rarityButtons, "rarityFilter", activeRarityFilter);
+            setButtonGroupState(typeButtons, "weaponTypeFilter", activeTypeFilter);
+        };
+
+        section.addEventListener("click", (event) => {
+            const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button") : null;
+            if (!target) {
+                return;
+            }
+
+            if (target.dataset.rarityFilter) {
+                activeRarityFilter = target.dataset.rarityFilter;
+                applyFilters();
+                return;
+            }
+
+            if (target.dataset.weaponTypeFilter) {
+                activeTypeFilter = target.dataset.weaponTypeFilter;
+                applyFilters();
+            }
         });
-    }
 
-    for (const button of typeButtons) {
-        button.addEventListener("click", () => {
-            activeTypeFilter = button.dataset.weaponTypeFilter ?? "all";
+        searchInput?.addEventListener("input", () => {
+            activeNameQuery = normalizeText(searchInput.value.trim());
             applyFilters();
-        });
-    }
+        }, { passive: true });
 
-    searchInput?.addEventListener("input", () => {
-        activeNameQuery = normalizeText(searchInput.value.trim());
         applyFilters();
-    });
+    };
+
+    initWeaponFilters();
+    document.addEventListener("astro:page-load", initWeaponFilters);
 </script>
