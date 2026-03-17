@@ -276,7 +276,6 @@ const weaponSuggestions = (Object.values(weaponList?.items ?? {}) as YattaWeapon
                     alt={character.name}
                     class="w-full h-full object-cover"
                     transition:name={`${transitionBase}-image`}
-                    transition:persist
                     referrerpolicy="no-referrer"
                     data-fallback={character.fallbackImageUrl}
                     onerror="const fallback = this.getAttribute('data-fallback'); if (fallback && this.src !== fallback) { this.src = fallback; return; } this.onerror = null; this.src = '/favicon.svg';"

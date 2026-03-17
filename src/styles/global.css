@@ -7,3 +7,8 @@ summary,
 [role="button"] {
 	cursor: pointer;
 }
+
+.cv-auto {
+	content-visibility: auto;
+	contain-intrinsic-size: 320px;
+}

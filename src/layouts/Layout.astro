@@ -81,8 +81,16 @@ const structuredDataList = Array.isArray(structuredData)
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
 			href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
-			rel="stylesheet"
+			rel="preload"
+			as="style"
+			onload="this.onload=null;this.rel='stylesheet'"
 		/>
+		<noscript>
+			<link
+				href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+				rel="stylesheet"
+			/>
+		</noscript>
 		<script async src="https://www.googletagmanager.com/gtag/js?id=G-290N8WET57"></script>
 		<script is:inline>
 			window.dataLayer = window.dataLayer || [];

@@ -22,29 +22,7 @@ const enHomePath = `${baseUrl}en/`;
 			return;
 		}
 
-		const spanishCountries = new Set([
-			"AR", "BO", "CL", "CO", "CR", "CU", "DO", "EC", "SV", "GQ",
-			"GT", "HN", "MX", "NI", "PA", "PY", "PE", "PR", "ES", "UY", "VE"
-		]);
-
-		const getCountryFromCloudflare = async () => {
-			try {
-				const response = await fetch("/cdn-cgi/trace", { cache: "no-store" });
-				if (!response.ok) return "";
-				const content = await response.text();
-				const line = content.split("\n").find((item) => item.startsWith("loc="));
-				return line ? line.slice(4).trim().toUpperCase() : "";
-			} catch {
-				return "";
-			}
-		};
-
-		const detectPreferredLang = async () => {
-			const countryCode = await getCountryFromCloudflare();
-			if (countryCode && spanishCountries.has(countryCode)) {
-				return "es";
-			}
-
+		const detectPreferredLang = () => {
 			const browserPrefersSpanish = [
 				...(navigator.languages ?? []),
 				navigator.language ?? ""
@@ -53,12 +31,11 @@ const enHomePath = `${baseUrl}en/`;
 			return browserPrefersSpanish ? "es" : "en";
 		};
 
-		void detectPreferredLang().then((preferredLang) => {
-			localStorage.setItem(decisionKey, preferredLang);
-			if (preferredLang === "es") {
-				window.location.replace(esPath);
-			}
-		});
+		const preferredLang = detectPreferredLang();
+		localStorage.setItem(decisionKey, preferredLang);
+		if (preferredLang === "es") {
+			window.location.replace(esPath);
+		}
 	})();
 </script>
 
