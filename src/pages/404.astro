@@ -1,0 +1,33 @@
+---
+const baseUrl = import.meta.env.BASE_URL;
+const esHomePath = baseUrl;
+const enHomePath = `${baseUrl}en/`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Redirecting...</title>
+    <meta name="robots" content="noindex,follow" />
+  </head>
+  <body>
+    <script is:inline define:vars={{ esHomePath, enHomePath }}>
+      (() => {
+        const normalizePath = (value) => (value.endsWith("/") ? value : `${value}/`);
+        const currentPath = normalizePath(window.location.pathname);
+        const enPrefix = normalizePath(enHomePath);
+
+        const target = currentPath.startsWith(enPrefix) ? enHomePath : esHomePath;
+        window.location.replace(target);
+      })();
+    </script>
+
+    <noscript>
+      <p>Page not found.</p>
+      <p><a href={esHomePath}>Ir al inicio (ES)</a></p>
+      <p><a href={enHomePath}>Go to Home (EN)</a></p>
+    </noscript>
+  </body>
+</html>

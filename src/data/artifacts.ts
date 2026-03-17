@@ -3,7 +3,7 @@ import { type Lang } from "../i18n";
 export interface ArtifactSet {
     id: string;
     name: string;
-    rarity: 1 | 2 | 3 | 4 | 5;
+    rarity: 3 | 4 | 5;
     bonuses: string[];
     imageUrl: string;
     fallbackImageUrl?: string;
@@ -37,7 +37,7 @@ const fallbackArtifacts: ArtifactSet[] = [
     }
 ];
 
-const getBestRarity = (levelList?: number[]): ArtifactSet["rarity"] => {
+const getBestRarity = (levelList?: number[]): 1 | 2 | 3 | 4 | 5 => {
     if (!levelList?.length) {
         return 5;
     }
@@ -66,12 +66,17 @@ const mapYattaItemToArtifact = (key: string, item: YattaReliquaryItem): Artifact
         return null;
     }
 
+    const rarity = getBestRarity(item.levelList);
+    if (rarity === 1 || rarity === 2) {
+        return null;
+    }
+
     const imageUrl = `${YATTA_RELIQUARY_ASSET_BASE_URL}/${item.icon}.png`;
 
     return {
         id: key,
         name: item.name,
-        rarity: getBestRarity(item.levelList),
+        rarity,
         bonuses: getBonuses(item.affixList),
         imageUrl,
         fallbackImageUrl: imageUrl

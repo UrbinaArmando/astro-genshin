@@ -58,7 +58,6 @@ const transitionBase = `character-${characterSlug}`;
             alt={character.name}
             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             transition:name={`${transitionBase}-image`}
-            transition:persist
             loading="lazy"
             referrerpolicy="no-referrer"
             data-fallback={character.fallbackImageUrl}
@@ -105,7 +104,6 @@ const transitionBase = `character-${characterSlug}`;
         <h3
             class="text-lg font-bold text-white mb-1 group-hover:text-yellow-400 transition-colors"
             transition:name={`${transitionBase}-title`}
-            transition:persist
         >
             {character.name}
         </h3>
