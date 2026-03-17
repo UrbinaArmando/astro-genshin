@@ -582,37 +582,54 @@ const createWeaponSlugFromSuggestion = (weapon: Pick<YattaWeaponListItem, "id" |
 </Layout>
 
 <script>
-    const talentTabGroups = document.querySelectorAll<HTMLElement>("[data-talent-tabs]");
+    const initTalentTabs = () => {
+        const talentTabGroups = document.querySelectorAll<HTMLElement>("[data-talent-tabs]");
 
-    for (const group of talentTabGroups) {
-        const triggers = Array.from(group.querySelectorAll<HTMLButtonElement>("[data-tab-trigger]"));
-        const panels = Array.from(group.querySelectorAll<HTMLElement>("[data-tab-panel]"));
+        for (const group of talentTabGroups) {
+            const triggers = Array.from(group.querySelectorAll<HTMLButtonElement>("[data-tab-trigger]"));
+            const panels = Array.from(group.querySelectorAll<HTMLElement>("[data-tab-panel]"));
 
-        const activateTab = (targetId: string) => {
-            for (const trigger of triggers) {
-                const isActive = trigger.dataset.tabTarget === targetId;
-                trigger.setAttribute("aria-selected", String(isActive));
-                trigger.classList.toggle("bg-yellow-500", isActive);
-                trigger.classList.toggle("text-slate-900", isActive);
-                trigger.classList.toggle("border-yellow-400", isActive);
-                trigger.classList.toggle("bg-slate-900", !isActive);
-                trigger.classList.toggle("text-slate-200", !isActive);
-                trigger.classList.toggle("border-slate-700", !isActive);
-            }
-
-            for (const panel of panels) {
-                panel.classList.toggle("hidden", panel.id !== targetId);
-                panel.classList.toggle("block", panel.id === targetId);
-            }
-        };
-
-        for (const trigger of triggers) {
-            trigger.addEventListener("click", () => {
-                const targetId = trigger.dataset.tabTarget;
-                if (targetId) {
-                    activateTab(targetId);
+            const activateTab = (targetId: string) => {
+                for (const trigger of triggers) {
+                    const isActive = trigger.dataset.tabTarget === targetId;
+                    trigger.setAttribute("aria-selected", String(isActive));
+                    trigger.classList.toggle("bg-yellow-500", isActive);
+                    trigger.classList.toggle("text-slate-900", isActive);
+                    trigger.classList.toggle("border-yellow-400", isActive);
+                    trigger.classList.toggle("bg-slate-900", !isActive);
+                    trigger.classList.toggle("text-slate-200", !isActive);
+                    trigger.classList.toggle("border-slate-700", !isActive);
                 }
-            });
+
+                for (const panel of panels) {
+                    panel.classList.toggle("hidden", panel.id !== targetId);
+                    panel.classList.toggle("block", panel.id === targetId);
+                }
+            };
+
+            if (group.dataset.talentTabsReady === "true") {
+                const activeTarget =
+                    triggers.find((trigger) => trigger.getAttribute("aria-selected") === "true")?.dataset.tabTarget ??
+                    triggers[0]?.dataset.tabTarget;
+                if (activeTarget) {
+                    activateTab(activeTarget);
+                }
+                continue;
+            }
+
+            for (const trigger of triggers) {
+                trigger.addEventListener("click", () => {
+                    const targetId = trigger.dataset.tabTarget;
+                    if (targetId) {
+                        activateTab(targetId);
+                    }
+                });
+            }
+
+            group.dataset.talentTabsReady = "true";
         }
-    }
+    };
+
+    initTalentTabs();
+    document.addEventListener("astro:page-load", initTalentTabs);
 </script>

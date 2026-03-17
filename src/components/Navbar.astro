@@ -181,29 +181,46 @@ const languageLinks = supportedLangs.map((locale) => ({
 </nav>
 
 <script>
-    const menuButton = document.getElementById("mobile-menu-button");
-    const menuId = menuButton?.getAttribute("aria-controls") ?? "";
-    const mobileMenu = menuId ? document.getElementById(menuId) : null;
-    const openIcon = menuButton?.querySelector<SVGElement>("[data-menu-icon-open]");
-    const closeIcon = menuButton?.querySelector<SVGElement>("[data-menu-icon-close]");
-    const openLabel = menuButton?.querySelector<HTMLElement>("[data-menu-label-open]");
-    const closeLabel = menuButton?.querySelector<HTMLElement>("[data-menu-label-close]");
-
-    const setMenuState = (isOpen: boolean) => {
-        if (!menuButton || !mobileMenu) {
+    const initMobileMenu = () => {
+        const menuButton = document.getElementById("mobile-menu-button");
+        if (!(menuButton instanceof HTMLButtonElement)) {
             return;
         }
 
-        menuButton.setAttribute("aria-expanded", String(isOpen));
-        mobileMenu.classList.toggle("hidden", !isOpen);
-        openIcon?.classList.toggle("hidden", isOpen);
-        closeIcon?.classList.toggle("hidden", !isOpen);
-        openLabel?.classList.toggle("hidden", isOpen);
-        closeLabel?.classList.toggle("hidden", !isOpen);
+        const menuId = menuButton.getAttribute("aria-controls") ?? "";
+        const mobileMenu = menuId ? document.getElementById(menuId) : null;
+        if (!mobileMenu) {
+            return;
+        }
+
+        const openIcon = menuButton.querySelector<SVGElement>("[data-menu-icon-open]");
+        const closeIcon = menuButton.querySelector<SVGElement>("[data-menu-icon-close]");
+        const openLabel = menuButton.querySelector<HTMLElement>("[data-menu-label-open]");
+        const closeLabel = menuButton.querySelector<HTMLElement>("[data-menu-label-close]");
+
+        const setMenuState = (isOpen: boolean) => {
+            menuButton.setAttribute("aria-expanded", String(isOpen));
+            mobileMenu.classList.toggle("hidden", !isOpen);
+            openIcon?.classList.toggle("hidden", isOpen);
+            closeIcon?.classList.toggle("hidden", !isOpen);
+            openLabel?.classList.toggle("hidden", isOpen);
+            closeLabel?.classList.toggle("hidden", !isOpen);
+        };
+
+        setMenuState(false);
+
+        if (menuButton.dataset.menuReady === "true") {
+            return;
+        }
+
+        menuButton.addEventListener("click", () => {
+            const isOpen = menuButton.getAttribute("aria-expanded") === "true";
+            setMenuState(!isOpen);
+        });
+
+        menuButton.dataset.menuReady = "true";
     };
 
-    menuButton?.addEventListener("click", () => {
-        const isOpen = menuButton.getAttribute("aria-expanded") === "true";
-        setMenuState(!isOpen);
-    });
+    initMobileMenu();
+    document.addEventListener("astro:page-load", initMobileMenu);
 </script>
